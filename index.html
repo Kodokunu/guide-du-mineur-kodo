@@ -468,7 +468,7 @@ function renderMarkers(){
           city.y=Math.max(0,Math.min(100,scy+(dy/(imgH*sc))*100));
           renderMarkers();
         }
-        function up(){window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);if(cityDragging){saveLS();showStatus(`✓ ${city.name} repositionné`);}cityDragging=false;cityDragId=null;}
+        function up(){window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);if(cityDragging){save();showStatus(`✓ ${city.name} repositionné`);}cityDragging=false;cityDragId=null;}
         window.addEventListener("mousemove",mv); window.addEventListener("mouseup",up);
       });
 
@@ -490,7 +490,35 @@ function renderMarkers(){
     const g=mkEl("g");
     g.style.pointerEvents=addMode?"none":"all";
     g.style.cursor="pointer";
-    g.addEventListener("click",ev=>{ev.stopPropagation();if(!addMode)selectMarker(m.id);});
+
+    let mDragging=false;
+    g.addEventListener("mousedown",ev=>{
+      if(addMode)return; ev.stopPropagation();
+      mDragging=false;
+      const sx=ev.clientX,sy=ev.clientY,smx=m.x,smy=m.y;
+      function mv(e){
+        const dx=e.clientX-sx,dy=e.clientY-sy;
+        if(Math.abs(dx)>4||Math.abs(dy)>4)mDragging=true;
+        if(!mDragging)return;
+        m.x=Math.max(0,Math.min(100,smx+(dx/(imgW*sc))*100));
+        m.y=Math.max(0,Math.min(100,smy+(dy/(imgH*sc))*100));
+        renderMarkers();
+      }
+      function up(){
+        window.removeEventListener("mousemove",mv);
+        window.removeEventListener("mouseup",up);
+        if(mDragging){
+          save();
+          showStatus(`✓ ${m.name} repositionné`);
+          // update detail panel position display
+          if(selId===m.id) showDetail(m);
+        }
+        mDragging=false;
+      }
+      window.addEventListener("mousemove",mv);
+      window.addEventListener("mouseup",up);
+    });
+    g.addEventListener("click",ev=>{ev.stopPropagation();if(!addMode&&!mDragging)selectMarker(m.id);});
 
     // shadow + halo + dot
     g.appendChild(mkEl("circle",{cx:cx+1,cy:cy+1,r:R+2,fill:"rgba(0,0,0,0.45)"}));
@@ -607,7 +635,7 @@ function resetCity(id){
   const city=cities.find(c=>c.id===id);
   if(!orig||!city)return;
   city.x=orig.x; city.y=orig.y;
-  saveLS(); renderAll(); showCityDetail(city); showStatus(`✓ ${city.name} réinitialisé`);
+  save(); renderAll(); showCityDetail(city); showStatus(`✓ ${city.name} réinitialisé`);
 }
 
 /* ================================================================
@@ -710,7 +738,7 @@ function saveAdd(x,y){
   if(!name){document.getElementById("fn").style.borderColor="#e07070";return;}
   const img=document.querySelector("#fip img");
   markers.push({id:"c"+Date.now(),name,icon:pendingIcon,cat:pendingCat,color:pendingColor,desc:document.getElementById("fd").value,image:img?img.src:null,x,y,vanilla:false});
-  saveLS(); cancelAdd();
+  save(); cancelAdd();
 }
 function cancelAdd(){
   addMode=false;
@@ -756,11 +784,11 @@ function saveEdit(id){
   m.desc=document.getElementById("ed").value;
   const img=document.getElementById("ecur");
   if(img&&img.tagName==="IMG")m.image=img.src;
-  selId=id; showDetail(m); saveLS(); renderAll();
+  selId=id; showDetail(m); save(); renderAll();
 }
 function delMarker(id){
   showModal("Supprimer ce marqueur ?","Cette action est irréversible.",[
-    {label:"Supprimer",cls:"btn br",cb:()=>{markers=markers.filter(x=>x.id!==id);saveLS();closeDetail();hideModal();}},
+    {label:"Supprimer",cls:"btn br",cb:()=>{markers=markers.filter(x=>x.id!==id);save();closeDetail();hideModal();}},
     {label:"Annuler",cls:"btn bn",cb:hideModal}
   ]);
 }
@@ -811,7 +839,7 @@ function applyImport(data,imported,replace=false){
     imported.filter(m=>!ex.has(m.id)).forEach(m=>markers.push({...m,vanilla:false}));
     imported.filter(m=>ex.has(m.id)).forEach(u=>{const i=markers.findIndex(m=>m.id===u.id);if(i>-1)markers[i]={...u,vanilla:false};});
   }
-  saveLS(); renderAll();
+  save(); renderAll();
 }
 function handleImportFile(file){
   importDB(file,(imported,data)=>{
@@ -835,6 +863,11 @@ function saveLS(){
     localStorage.setItem("kodo_vanilla",JSON.stringify(markers.filter(m=>m.vanilla)));
     localStorage.setItem("kodo_cities",JSON.stringify(cities));
   }catch(e){}
+}
+// Unified save: localStorage + Firebase if connected
+function save(){
+  saveLS();
+  if(typeof fbEnabled!=="undefined"&&fbEnabled) fbPush();
 }
 function loadLS(){
   try{
@@ -1002,12 +1035,8 @@ function applyRemoteData(remote){
   if(mapLoaded) renderAll();
 }
 
-// Override saveLS to also push to Firebase
-const _origSaveLS = saveLS;
-function saveLS(){
-  _origSaveLS();
-  if(fbEnabled) fbPush();
-}
+// saveLS now always calls fbPush if enabled — no override needed
+// fbPush is called directly after saveLS() everywhere
 
 // Show setup modal on first load if no config saved, else auto-connect
 window.addEventListener("load",()=>{
