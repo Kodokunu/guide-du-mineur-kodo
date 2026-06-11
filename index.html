@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Kodo Urmi — Carnet du Mineur</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Palatino Linotype',Palatino,serif;background:#0a0805;color:#e8d5b0;height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+#topbar{padding:7px 14px;border-bottom:1px solid #2a1a08;background:#0d0a06;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.main-title{font-size:14px;font-weight:600;color:#c8a86b;letter-spacing:2px}
+.sub-title{font-size:9px;color:#5a4020;letter-spacing:1px}
+#controls{margin-left:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+select{background:#16120a;color:#c8a86b;border:1px solid #3a2a10;border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer;font-family:inherit;outline:none}
+.ck-label{display:flex;align-items:center;gap:4px;font-size:11px;color:#9a8060;cursor:pointer;background:#16120a;border:1px solid #3a2a10;border-radius:4px;padding:3px 8px}
+.tb{background:#16120a;color:#c8a86b;border:1px solid #3a2a10;border-radius:4px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.tb:hover{background:#1e180e}
+.tb.active{background:#3a1a02;color:#FFD700;border-color:#FFD700}
+.tb.green{background:#0e1f06;color:#90c060;border-color:#2a4010}
+.tb.blue{background:#060e1f;color:#60a0e0;border-color:#102a50}
+/* LOAD */
+#load-screen{position:fixed;inset:0;background:#0a0805;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:14px}
+#load-screen h2{color:#c8a86b;font-size:22px;letter-spacing:3px}
+.lbox{color:#5a4020;font-size:12px;border:1px solid #2a1a08;padding:12px 18px;border-radius:6px;line-height:2.2;max-width:440px;width:100%}
+.load-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.lbtn{background:#1a2a08;color:#90c060;border:1px solid #2a4010;border-radius:4px;padding:9px 22px;font-size:13px;cursor:pointer;font-family:inherit;letter-spacing:1px}
+.lbtn.blue{background:#060e1f;color:#60a0e0;border-color:#102a50}
+#file-input,#db-import-input{display:none}
+/* MAP */
+#body{flex:1;display:flex;overflow:hidden}
+#map-wrap{flex:1;position:relative;overflow:hidden;background:#0a0805;cursor:grab}
+#map-view{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;line-height:0}
+#map-img{display:block;max-width:none;pointer-events:none}
+#marker-svg{position:absolute;top:0;left:0;overflow:visible}
+/* LEGEND */
+#legend{position:absolute;bottom:12px;left:12px;background:#0a0805ee;border:1px solid #2a1a08;border-radius:6px;padding:8px 12px;z-index:10;pointer-events:none;font-size:10px;max-height:60vh;overflow-y:auto}
+.leg-title{color:#5a4020;letter-spacing:1px;margin-bottom:4px;font-size:9px}
+.leg-row{display:flex;align-items:center;gap:6px;color:#9a8060;line-height:1.9}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+#legend hr{border:none;border-top:1px solid #2a1a08;margin:4px 0}
+/* ZOOM */
+#zoom-btns{position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:4px;z-index:10}
+#zoom-btns button{width:32px;height:32px;background:#0d0a06;border:1px solid #2a1a08;color:#c8a86b;font-size:17px;border-radius:4px;cursor:pointer;line-height:1;font-family:inherit}
+#add-hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#1a0e02cc;border:1px solid #FFD700;border-radius:6px;padding:6px 18px;font-size:12px;color:#FFD700;pointer-events:none;z-index:10;display:none;white-space:nowrap}
+#db-status{position:absolute;top:12px;right:12px;background:#0a1a08ee;border:1px solid #2a4010;border-radius:6px;padding:5px 12px;font-size:11px;color:#90c060;z-index:10;display:none}
+/* PANEL */
+#panel{width:285px;background:#0a0805;border-left:1px solid #1a1008;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+#panel-detail{padding:13px;border-bottom:1px solid #1a1008;overflow-y:auto;display:none;max-height:60%}
+#panel-count{padding:5px 13px 4px;font-size:10px;color:#5a4020;border-bottom:1px solid #1a1008;flex-shrink:0}
+#panel-list{flex:1;overflow-y:auto}
+.cat-hdr{padding:4px 13px;background:#0d0a06;border-bottom:1px solid #1a1008;display:flex;align-items:center;gap:6px}
+.cat-hdr .lbl{font-size:9px;color:#7a6040;font-weight:600;letter-spacing:1px;flex:1}
+.cat-hdr .cnt{font-size:9px;color:#3a2810}
+.list-item{padding:6px 13px;border-bottom:1px solid #0f0c07;cursor:pointer;border-left:2px solid transparent}
+.list-item:hover{background:#12100a}
+.list-item.sel{background:#16120a}
+.iname{font-size:12px;color:#c8a86b}
+.list-item.sel .iname{color:var(--oc)}
+.idesc{font-size:10px;color:#4a3820;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.itag{font-size:9px;color:#7a5020;margin-top:1px}
+/* FORM */
+.fl{font-size:10px;color:#7a6040;margin:7px 0 2px;display:block}
+.fi{width:100%;background:#16120a;color:#e8d5b0;border:1px solid #3a2a10;border-radius:4px;padding:4px 7px;font-size:11px;outline:none;font-family:inherit}
+.fi:focus{border-color:#5a4020}
+textarea.fi{resize:vertical}
+.brow{display:flex;gap:5px;margin-top:9px}
+.btn{flex:1;border-radius:4px;padding:5px 0;font-size:11px;cursor:pointer;font-family:inherit}
+.bg{background:#0e1f06;color:#90c060;border:1px solid #2a4010}
+.br{background:#1f0606;color:#e07070;border:1px solid #4a1010}
+.bn{background:#16120a;color:#c8a86b;border:1px solid #3a2a10}
+.dname{font-size:14px;font-weight:600}
+.dsub{font-size:10px;color:#5a4020;margin-top:2px}
+.ddesc{font-size:11px;color:#b09060;line-height:1.6;margin:7px 0}
+.dvan{font-size:10px;color:#3a2810;font-style:italic;margin-bottom:7px}
+.dimg{width:100%;border-radius:4px;margin-bottom:7px;border:1px solid #2a1a08}
+.cbtn{background:none;border:none;color:#5a4020;font-size:17px;cursor:pointer}
+/* MODAL */
+#modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:center;justify-content:center}
+#modal{background:#0d0a06;border:1px solid #3a2a10;border-radius:8px;padding:20px 24px;max-width:460px;width:92%;color:#e8d5b0}
+#modal h3{font-size:15px;color:#c8a86b;margin-bottom:12px;letter-spacing:1px}
+#modal p{font-size:12px;color:#9a8060;line-height:1.7;margin-bottom:14px}
+#modal .mbrow{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+/* ICON PICKER */
+.icon-picker{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:6px 0}
+.icon-btn{width:30px;height:30px;background:#16120a;border:1.5px solid #2a1a08;border-radius:4px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:border-color .15s}
+.icon-btn:hover{border-color:#7a6040;background:#1e180e}
+.icon-btn.sel{border-color:#FFD700;background:#3a1a02}
+.cat-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.cat-tab{background:#16120a;border:1px solid #2a1a08;border-radius:4px;padding:3px 8px;font-size:10px;color:#9a8060;cursor:pointer}
+.cat-tab.sel{background:#1a1008;border-color:#7a6040;color:#c8a86b}
+/* COLOR PICKER */
+.color-swatches{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}
+.swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0}
+.swatch.sel{border-color:#fff;transform:scale(1.15)}
+.color-custom-wrap{display:flex;align-items:center;gap:6px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div id="load-screen">
+  <h2>⛏ KODO URMI</h2>
+  <p>Carnet du Mineur — Keizaal · Skyrim Special Edition</p>
+  <div class="lbox">Charge l'image de ta carte Skyrim HD.<br>Elle reste uniquement sur ton PC.</div>
+  <div class="load-btns">
+    <label class="lbtn" for="file-input">📁 Charger la carte</label>
+    <label class="lbtn blue" for="db-import-input">📦 Importer base de données</label>
+  </div>
+  <input type="file" id="file-input" accept="image/*">
+  <input type="file" id="db-import-input" accept=".json">
+</div>
+
+<div id="topbar">
+  <div>
+    <div class="main-title">⛏ KODO URMI — CARNET DU MINEUR</div>
+    <div class="sub-title">Keizaal · Skyrim Special Edition</div>
+  </div>
+  <div id="controls">
+    <label class="ck-label"><input type="checkbox" id="ck-cities" checked> Villes</label>
+    <select id="sel-cat"><option value="all">Toutes catégories</option></select>
+    <label class="ck-label"><input type="checkbox" id="ck-van" checked> Vanilla</label>
+    <label class="ck-label"><input type="checkbox" id="ck-cus" checked> Mes marqueurs</label>
+    <button class="tb active" id="btn-add">+ Ajouter</button>
+    <button class="tb green" id="btn-export">⬇ Exporter BD</button>
+    <label class="tb blue" for="db-import-input2">⬆ Importer BD</label>
+    <input type="file" id="db-import-input2" accept=".json" style="display:none">
+  </div>
+</div>
+
+<div id="body">
+  <div id="map-wrap">
+    <div id="map-view">
+      <img id="map-img" draggable="false" alt="">
+      <svg id="marker-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div id="add-hint">Cliquez sur la carte pour placer un marqueur</div>
+    <div id="db-status"></div>
+    <div id="legend">
+      <div class="leg-title">CATÉGORIES</div>
+      <div id="leg-cats"></div>
+      <hr>
+      <div class="leg-row"><div style="width:9px;height:9px;background:#e8c860;transform:rotate(45deg);flex-shrink:0;border:1px solid #b8901a"></div>Ville</div>
+    </div>
+    <div id="zoom-btns">
+      <button id="bzi">＋</button>
+      <button id="bzo">－</button>
+      <button id="bzr">⌂</button>
+    </div>
+  </div>
+  <div id="panel">
+    <div id="panel-detail"></div>
+    <div id="panel-count">0 marqueurs</div>
+    <div id="panel-list"></div>
+  </div>
+</div>
+
+<div id="modal-bg">
+  <div id="modal">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div class="mbrow" id="modal-btns"></div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   ICON CATEGORIES & ICONS
+================================================================ */
+const ICON_CATS = {
+  mine:     { l:"Mines & Ressources",  col:"#cd8b5a" },
+  danger:   { l:"Dangers",             col:"#e05050" },
+  poi:      { l:"Points d'intérêt",    col:"#60a0e0" },
+  structure:{ l:"Structures",          col:"#c0c0c0" },
+  nature:   { l:"Nature",              col:"#80c060" },
+  camp:     { l:"Camps & Factions",    col:"#e0b040" },
+  perso:    { l:"Personnalisé",        col:"#FF6B35" },
+};
+
+// Each icon: { sym, label, cat }
+const ICONS = [
+  // Mines & Ressources
+  {s:"⛏",  l:"Mine",            c:"mine"},
+  {s:"💎",  l:"Gemme rare",      c:"mine"},
+  {s:"🪨",  l:"Filon",           c:"mine"},
+  {s:"🪵",  l:"Bois / Forêt",    c:"mine"},
+  {s:"🌿",  l:"Herbes / Alchim", c:"mine"},
+  {s:"🍄",  l:"Champignons",     c:"mine"},
+  {s:"🐟",  l:"Pêche",           c:"mine"},
+  {s:"🧪",  l:"Ingrédients",     c:"mine"},
+  // Danger
+  {s:"💀",  l:"Mort / Boss",      c:"danger"},
+  {s:"⚠️",  l:"Danger",           c:"danger"},
+  {s:"🐺",  l:"Loups / Bêtes",    c:"danger"},
+  {s:"🐻",  l:"Ours / Trolls",    c:"danger"},
+  {s:"🧟",  l:"Morts-vivants",    c:"danger"},
+  {s:"🦅",  l:"Dragon",           c:"danger"},
+  {s:"🧛",  l:"Vampires",         c:"danger"},
+  {s:"🕷️",  l:"Araignées",        c:"danger"},
+  // Points d'intérêt
+  {s:"❓",  l:"Inconnu",          c:"poi"},
+  {s:"📍",  l:"Repère",           c:"poi"},
+  {s:"💬",  l:"PNJ / Quête",      c:"poi"},
+  {s:"📦",  l:"Butin / Coffre",   c:"poi"},
+  {s:"📖",  l:"Livre / Savoir",   c:"poi"},
+  {s:"🗺️",  l:"Exploration",      c:"poi"},
+  {s:"⚡",  l:"Événement",        c:"poi"},
+  {s:"🔮",  l:"Magie / Sorts",    c:"poi"},
+  // Structures
+  {s:"🏰",  l:"Fort / Château",   c:"structure"},
+  {s:"🏛️",  l:"Temple / Ruine",   c:"structure"},
+  {s:"🗼",  l:"Tour de garde",     c:"structure"},
+  {s:"🏠",  l:"Maison / Ferme",   c:"structure"},
+  {s:"🔱",  l:"Sanctuaire",       c:"structure"},
+  {s:"⛪",  l:"Temple",           c:"structure"},
+  {s:"🚪",  l:"Grotte / Entrée",  c:"structure"},
+  {s:"🏗️",  l:"Dwemer",           c:"structure"},
+  // Nature
+  {s:"🌲",  l:"Forêt dense",      c:"nature"},
+  {s:"⛰️",  l:"Montagne",         c:"nature"},
+  {s:"🌊",  l:"Eau / Lac",        c:"nature"},
+  {s:"❄️",  l:"Zone gelée",       c:"nature"},
+  {s:"🌋",  l:"Volcan",           c:"nature"},
+  {s:"🌸",  l:"Clairière",        c:"nature"},
+  {s:"🍂",  l:"Automne / Rift",   c:"nature"},
+  {s:"🌑",  l:"Zone sombre",      c:"nature"},
+  // Camps & Factions
+  {s:"⚔️",  l:"Combat / Bandits", c:"camp"},
+  {s:"🏕️",  l:"Camp",             c:"camp"},
+  {s:"🛡️",  l:"Garde / Légion",   c:"camp"},
+  {s:"🗡️",  l:"Assassins",        c:"camp"},
+  {s:"🐉",  l:"Culte du Dragon",  c:"camp"},
+  {s:"🧙",  l:"Mages",            c:"camp"},
+  {s:"🏹",  l:"Chasseurs",        c:"camp"},
+  {s:"👑",  l:"Roi / Chef",       c:"camp"},
+  // Personnalisé
+  {s:"★",   l:"Favori",           c:"perso"},
+  {s:"✅",  l:"Fait",             c:"perso"},
+  {s:"🔴",  l:"Rouge",            c:"perso"},
+  {s:"🟡",  l:"Jaune",            c:"perso"},
+  {s:"🟢",  l:"Vert",             c:"perso"},
+  {s:"🔵",  l:"Bleu",             c:"perso"},
+  {s:"🔖",  l:"Marque-page",      c:"perso"},
+  {s:"💡",  l:"Idée / Note",      c:"perso"},
+];
+
+const PALETTE = [
+  "#e05050","#e08030","#e0c030","#80c040","#40b880",
+  "#40b0d0","#4070e0","#8050d0","#d040a0","#e8d5b0",
+  "#c0c0c0","#ffffff",
+];
+
+/* ================================================================
+   VANILLA MINES DATA
+================================================================ */
+const VANILLA_MARKERS = [
+  {id:"v1", name:"Halted Stream Camp",   icon:"⛏", cat:"mine", color:"#cd8b5a", x:40, y:28, desc:"Massif de fer + sort Transmutation Minérale. Camp de bandits.", vanilla:true},
+  {id:"v2", name:"Embershard Mine",      icon:"⛏", cat:"mine", color:"#cd8b5a", x:33, y:58, desc:"Mine de fer proche de Riverwood.", vanilla:true},
+  {id:"v3", name:"Kolskeggr Mine",       icon:"⛏", cat:"mine", color:"#ffe566", x:20, y:63, desc:"Plus grande mine d'or. Infestée de Forsworn.", vanilla:true},
+  {id:"v4", name:"Darkwater Crossing",   icon:"⛏", cat:"mine", color:"#e09050", x:62, y:48, desc:"Mine de corindon dans le Rift.", vanilla:true},
+  {id:"v5", name:"Bilegulch Mine",       icon:"⛏", cat:"mine", color:"#80d080", x:25, y:58, desc:"Mine d'orichalque. Bandits.", vanilla:true},
+  {id:"v6", name:"Dushnikh Mine",        icon:"⛏", cat:"mine", color:"#80d080", x:16, y:70, desc:"Mine d'orichalque. Camp Orc.", vanilla:true},
+  {id:"v7", name:"Gloombound Mine",      icon:"⛏", cat:"mine", color:"#c0a0f0", x:78, y:63, desc:"Seule grande mine d'ébonite. Camp Orc Narzulbur.", vanilla:true},
+  {id:"v8", name:"Redbelly Mine",        icon:"⛏", cat:"mine", color:"#cd8b5a", x:72, y:72, desc:"Mine de fer à Shor's Stone.", vanilla:true},
+  {id:"v9", name:"Left Hand Mine",       icon:"⛏", cat:"mine", color:"#cd8b5a", x:13, y:67, desc:"Mine de fer près de Markarth.", vanilla:true},
+  {id:"v10",name:"Iron-Breaker Mine",    icon:"⛏", cat:"mine", color:"#cd8b5a", x:42, y:8,  desc:"Mine de fer à Dawnstar.", vanilla:true},
+  {id:"v11",name:"Quicksilver Mine",     icon:"⛏", cat:"mine", color:"#a8eef4", x:45, y:8,  desc:"Mine de vif-argent à Dawnstar.", vanilla:true},
+  {id:"v12",name:"Steamscorch Mine",     icon:"⛏", cat:"mine", color:"#50dde8", x:65, y:30, desc:"Mine de malachite à Kynesgrove.", vanilla:true},
+  {id:"v13",name:"Northwind Mine",       icon:"⛏", cat:"mine", color:"#cd8b5a", x:76, y:42, desc:"Mine abandonnée, Montagnes de l'Aurore.", vanilla:true},
+  {id:"v14",name:"Cidhna Mine",          icon:"⛏", cat:"mine", color:"#e8e8e8", x:12, y:68, desc:"Prison/mine d'argent de Markarth.", vanilla:true},
+  {id:"v15",name:"Soljund's Sinkhole",   icon:"⛏", cat:"mine", color:"#d0c0f0", x:28, y:60, desc:"Mine de pierre de lune. Draugrs.", vanilla:true},
+  {id:"v16",name:"Knifepoint Ridge",     icon:"⛏", cat:"mine", color:"#e09050", x:33, y:72, desc:"Mine de corindon. Bandits.", vanilla:true},
+  {id:"v17",name:"Mor Khazgur Mine",     icon:"⛏", cat:"mine", color:"#80d080", x:8,  y:42, desc:"Mine d'orichalque. Camp Orc, extrême ouest.", vanilla:true},
+  {id:"v18",name:"Kagrenzel",            icon:"🏗️", cat:"structure", color:"#c0c0c0", x:82, y:40, desc:"Ruine Dwemer. Chute spectaculaire, trésor au fond.", vanilla:true},
+  {id:"v19",name:"Falkreath - filons",   icon:"🪨", cat:"mine", color:"#cd8b5a", x:38, y:80, desc:"Filons de fer dans la région de Falkreath.", vanilla:true},
+  {id:"v20",name:"Goldenrock Mine",      icon:"⛏", cat:"mine", color:"#e09050", x:55, y:78, desc:"Mine de corindon dans le Rift.", vanilla:true},
+  {id:"v21",name:"Cronvangr Cave",       icon:"🚪", cat:"structure", color:"#8050d0", x:67, y:43, desc:"Grotte infestée de vampires, Eastmarch.", vanilla:true},
+  {id:"v22",name:"Pinepeak Cavern",      icon:"🚪", cat:"structure", color:"#80c060", x:68, y:55, desc:"Grotte avec ours dans le Rift.", vanilla:true},
+  {id:"v23",name:"Snapleg Cave",         icon:"🚪", cat:"structure", color:"#8050d0", x:71, y:60, desc:"Grotte de sorcières hagraven.", vanilla:true},
+  {id:"v24",name:"Chillwind Depths",     icon:"🚪", cat:"structure", color:"#c0c0c0", x:16, y:48, desc:"Grotte avec Chaurus dans le Reach.", vanilla:true},
+  {id:"v25",name:"Bruca's Leap Redoubt", icon:"🏕️", cat:"camp",     color:"#e0b040", x:18, y:54, desc:"Camp Forsworn dans le Reach.", vanilla:true},
+];
+
+const CITIES_DEFAULT = [
+  {id:"c_sol",   name:"Solitude",     hold:"Haafingar",  x:18,   y:20},
+  {id:"c_mor",   name:"Morthal",      hold:"Hjaalmarch", x:28,   y:36},
+  {id:"c_daw",   name:"Dawnstar",     hold:"The Pale",   x:43,   y:16},
+  {id:"c_win",   name:"Winterhold",   hold:"Winterhold", x:71,   y:18},
+  {id:"c_wnd",   name:"Windhelm",     hold:"Eastmarch",  x:66,   y:30},
+  {id:"c_whi",   name:"Whiterun",     hold:"Whiterun",   x:52.5, y:54},
+  {id:"c_mar",   name:"Markarth",     hold:"The Reach",  x:14,   y:74},
+  {id:"c_fal",   name:"Falkreath",    hold:"Falkreath",  x:38,   y:87},
+  {id:"c_rif",   name:"Riften",       hold:"The Rift",   x:75,   y:84},
+  {id:"c_hel",   name:"Helgen",       hold:"Falkreath",  x:52,   y:80},
+  {id:"c_riv",   name:"Riverwood",    hold:"Whiterun",   x:44,   y:67},
+  {id:"c_ivar",  name:"Ivarstead",    hold:"The Rift",   x:60,   y:71},
+  {id:"c_kyne",  name:"Kynesgrove",   hold:"Eastmarch",  x:64,   y:39},
+  {id:"c_shor",  name:"Shor's Stone", hold:"The Rift",   x:72,   y:77},
+  {id:"c_rorik", name:"Rorikstead",   hold:"Whiterun",   x:24,   y:55},
+  {id:"c_dragon",name:"Dragonbridge", hold:"Haafingar",  x:20,   y:28},
+];
+
+/* ================================================================
+   STATE
+================================================================ */
+let markers = [...VANILLA_MARKERS];
+let cities  = CITIES_DEFAULT.map(c=>({...c}));
+let selId = null, selCityId = null;
+let addMode = false;
+let cityDragging = false, cityDragId = null;
+let imgW = 1, imgH = 1, mapLoaded = false;
+
+// Pending add form state
+let pendingIcon  = "⛏";
+let pendingCat   = "mine";
+let pendingColor = "#cd8b5a";
+let pendingIconCatTab = "mine";
+
+/* ================================================================
+   TRANSFORM
+================================================================ */
+let sc=1,ox=0,oy=0,drag=false,dsx,dsy,dox,doy;
+const mapWrap=document.getElementById("map-wrap");
+const mapView=document.getElementById("map-view");
+const mapImg =document.getElementById("map-img");
+const svg    =document.getElementById("marker-svg");
+
+function applyT(){ mapView.style.transform=`translate(${ox}px,${oy}px) scale(${sc})`; }
+function doZoom(f,cx,cy){
+  const ns=Math.max(0.25,Math.min(10,sc*f));
+  ox=cx-(cx-ox)*(ns/sc); oy=cy-(cy-oy)*(ns/sc); sc=ns; applyT();
+}
+mapWrap.addEventListener("wheel",e=>{
+  e.preventDefault();
+  const r=mapWrap.getBoundingClientRect();
+  doZoom(e.deltaY<0?1.12:0.89,e.clientX-r.left,e.clientY-r.top);
+},{passive:false});
+mapWrap.addEventListener("mousedown",e=>{
+  if(addMode)return;
+  drag=true;dsx=e.clientX;dsy=e.clientY;dox=ox;doy=oy;
+  mapWrap.style.cursor="grabbing";
+});
+window.addEventListener("mousemove",e=>{if(!drag)return;ox=dox+e.clientX-dsx;oy=doy+e.clientY-dsy;applyT();});
+window.addEventListener("mouseup",()=>{drag=false;mapWrap.style.cursor=addMode?"crosshair":"grab";});
+document.getElementById("bzi").onclick=()=>{const r=mapWrap.getBoundingClientRect();doZoom(1.25,r.width/2,r.height/2);};
+document.getElementById("bzo").onclick=()=>{const r=mapWrap.getBoundingClientRect();doZoom(0.8,r.width/2,r.height/2);};
+document.getElementById("bzr").onclick=()=>{sc=1;ox=0;oy=0;applyT();};
+
+/* ================================================================
+   LOAD IMAGE
+================================================================ */
+function initMap(url){
+  mapImg.onload=()=>{
+    imgW=mapImg.naturalWidth; imgH=mapImg.naturalHeight;
+    mapImg.style.width=imgW+"px"; mapImg.style.height=imgH+"px";
+    svg.setAttribute("width",imgW); svg.setAttribute("height",imgH);
+    svg.style.width=imgW+"px"; svg.style.height=imgH+"px";
+    mapLoaded=true;
+    document.getElementById("load-screen").style.display="none";
+    renderAll();
+  };
+  mapImg.src=url;
+}
+document.getElementById("file-input").onchange=e=>{
+  const f=e.target.files[0];if(!f)return; initMap(URL.createObjectURL(f));
+};
+
+/* ================================================================
+   FILTERS
+================================================================ */
+const selCat=document.getElementById("sel-cat");
+const ckVan =document.getElementById("ck-van");
+const ckCus =document.getElementById("ck-cus");
+const ckCities=document.getElementById("ck-cities");
+Object.entries(ICON_CATS).forEach(([k,v])=>{
+  const o=document.createElement("option");o.value=k;o.textContent=v.l;selCat.appendChild(o);
+});
+[selCat,ckVan,ckCus,ckCities].forEach(el=>el.addEventListener("change",renderAll));
+
+function visible(){
+  return markers.filter(m=>{
+    if(!ckVan.checked&&m.vanilla)return false;
+    if(!ckCus.checked&&!m.vanilla)return false;
+    if(selCat.value!=="all"&&m.cat!==selCat.value)return false;
+    return true;
+  });
+}
+
+/* ================================================================
+   RENDER
+================================================================ */
+function mkEl(tag,attrs={}){
+  const el=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+  return el;
+}
+function mkTxt(x,y,fs,fill,stroke,sw,text,font){
+  const t=mkEl("text",{"x":x,"y":y,"text-anchor":"middle","font-size":fs,"fill":fill});
+  if(stroke){t.setAttribute("stroke",stroke);t.setAttribute("stroke-width",sw);t.setAttribute("paint-order","stroke");}
+  t.style.pointerEvents="none";
+  t.style.fontFamily=font||"sans-serif";
+  t.textContent=text;
+  return t;
+}
+
+function renderMarkers(){
+  svg.innerHTML="";
+
+  // --- CITIES ---
+  if(ckCities.checked){
+    cities.forEach(city=>{
+      const cx=(city.x/100)*imgW, cy=(city.y/100)*imgH;
+      const isSel=city.id===selCityId, s=isSel?11:8;
+      const g=mkEl("g");
+      g.style.pointerEvents=addMode?"none":"all";
+      g.style.cursor="pointer";
+
+      g.addEventListener("click",ev=>{
+        ev.stopPropagation();
+        if(addMode||cityDragging)return;
+        selCityId=(selCityId===city.id)?null:city.id; selId=null;
+        if(selCityId)showCityDetail(city); else closeDetail();
+        renderAll();
+      });
+      g.addEventListener("mousedown",ev=>{
+        if(addMode)return; ev.stopPropagation();
+        cityDragging=false; cityDragId=city.id;
+        const sx=ev.clientX,sy=ev.clientY,scx=city.x,scy=city.y;
+        function mv(e){
+          const dx=e.clientX-sx,dy=e.clientY-sy;
+          if(Math.abs(dx)>3||Math.abs(dy)>3)cityDragging=true;
+          city.x=Math.max(0,Math.min(100,scx+(dx/(imgW*sc))*100));
+          city.y=Math.max(0,Math.min(100,scy+(dy/(imgH*sc))*100));
+          renderMarkers();
+        }
+        function up(){window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);if(cityDragging){saveLS();showStatus(`✓ ${city.name} repositionné`);}cityDragging=false;cityDragId=null;}
+        window.addEventListener("mousemove",mv); window.addEventListener("mouseup",up);
+      });
+
+      g.appendChild(mkEl("polygon",{points:`${cx+1},${cy-s+1} ${cx+s+1},${cy+1} ${cx+1},${cy+s+1} ${cx-s+1},${cy+1}`,fill:"rgba(0,0,0,0.4)"}));
+      g.appendChild(mkEl("polygon",{points:`${cx},${cy-s} ${cx+s},${cy} ${cx},${cy+s} ${cx-s},${cy}`,fill:"#e8c860",stroke:isSel?"#fff":"#000","stroke-width":isSel?"2":"1.5"}));
+      g.appendChild(mkEl("polygon",{points:`${cx},${cy-s} ${cx+s},${cy} ${cx},${cy+s} ${cx-s},${cy}`,fill:"none",stroke:"#b8901a","stroke-width":"0.8"}));
+      g.appendChild(mkTxt(cx,cy-(s+5),isSel?11:9.5,isSel?"#ffe080":"#e8d090","#000",2.5,city.name,"'Palatino Linotype',serif"));
+      if(isSel) g.appendChild(mkTxt(cx,cy+(s+12),9,"#c8a86b","#000",2,city.hold,"'Palatino Linotype',serif"));
+      svg.appendChild(g);
+    });
+  }
+
+  // --- MARKERS ---
+  visible().forEach(m=>{
+    const cx=(m.x/100)*imgW, cy=(m.y/100)*imgH;
+    const isSel=m.id===selId, R=isSel?13:9;
+    const col=m.color||"#cd8b5a";
+
+    const g=mkEl("g");
+    g.style.pointerEvents=addMode?"none":"all";
+    g.style.cursor="pointer";
+    g.addEventListener("click",ev=>{ev.stopPropagation();if(!addMode)selectMarker(m.id);});
+
+    // shadow + halo + dot
+    g.appendChild(mkEl("circle",{cx:cx+1,cy:cy+1,r:R+2,fill:"rgba(0,0,0,0.45)"}));
+    g.appendChild(mkEl("circle",{cx,cy,r:R+2.5,fill:"none",stroke:isSel?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.55)","stroke-width":isSel?"2":"1.2"}));
+    g.appendChild(mkEl("circle",{cx,cy,r:R,fill:col+"cc",stroke:col,"stroke-width":isSel?"2.5":"1.5"}));
+
+    // icon
+    const ico=mkTxt(cx,cy+(isSel?5:3.5),isSel?11:8.5,"#fff",null,0,m.icon||"●");
+    ico.style.pointerEvents="none";
+    g.appendChild(ico);
+
+    if(isSel){
+      g.appendChild(mkTxt(cx,cy-17,11,col,"#000",3,m.name,"'Palatino Linotype',serif"));
+    }
+    svg.appendChild(g);
+  });
+}
+
+function renderList(){
+  const vis=visible();
+  document.getElementById("panel-count").textContent=
+    vis.length+" marqueur"+(vis.length>1?"s":"")+" affiché"+(vis.length>1?"s":"");
+
+  const list=document.getElementById("panel-list"); list.innerHTML="";
+  const grp={};
+  vis.forEach(m=>{if(!grp[m.cat])grp[m.cat]=[];grp[m.cat].push(m);});
+  Object.entries(ICON_CATS).forEach(([cat,info])=>{
+    const items=grp[cat]; if(!items)return;
+    const h=document.createElement("div"); h.className="cat-hdr";
+    h.innerHTML=`<div class="leg-dot" style="background:${info.col}"></div><span class="lbl">${info.l.toUpperCase()}</span><span class="cnt">${items.length}</span>`;
+    list.appendChild(h);
+    items.forEach(m=>{
+      const isSel=m.id===selId;
+      const row=document.createElement("div");
+      row.className="list-item"+(isSel?" sel":"");
+      row.style.setProperty("--oc",m.color||info.col);
+      if(isSel)row.style.borderLeftColor=m.color||info.col;
+      row.innerHTML=`<div class="iname">${m.icon||"●"} ${m.name}</div>
+        ${m.desc?`<div class="idesc">${m.desc.slice(0,55)}${m.desc.length>55?"…":""}</div>`:""}
+        ${!m.vanilla?`<div class="itag">★ Perso</div>`:""}`;
+      row.onclick=()=>selectMarker(m.id);
+      list.appendChild(row);
+    });
+  });
+
+  // legend
+  const lc=document.getElementById("leg-cats"); lc.innerHTML="";
+  Object.entries(ICON_CATS).filter(([k])=>vis.some(m=>m.cat===k)).forEach(([k,v])=>{
+    const d=document.createElement("div"); d.className="leg-row";
+    d.innerHTML=`<div class="leg-dot" style="background:${v.col}"></div>${v.l}`;
+    lc.appendChild(d);
+  });
+}
+
+function renderAll(){ renderMarkers(); renderList(); }
+
+/* ================================================================
+   SELECT / DETAIL
+================================================================ */
+function selectMarker(id){
+  selId=(selId===id)?null:id; selCityId=null;
+  if(selId)showDetail(markers.find(m=>m.id===id));
+  else closeDetail();
+  renderAll();
+}
+function closeDetail(){
+  selId=null; selCityId=null;
+  const pd=document.getElementById("panel-detail");
+  pd.style.display="none"; pd.innerHTML="";
+  renderAll();
+}
+function showDetail(m){
+  if(!m)return;
+  const catInfo=ICON_CATS[m.cat]||ICON_CATS.perso;
+  const pd=document.getElementById("panel-detail");
+  pd.style.display="block";
+  pd.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="dname" style="color:${m.color||catInfo.col}">${m.icon||"●"} ${m.name}</div>
+        <div class="dsub">${catInfo.l}</div>
+      </div>
+      <button class="cbtn" onclick="closeDetail()">✕</button>
+    </div>
+    ${m.image?`<img src="${m.image}" class="dimg">`:""}
+    ${m.desc?`<p class="ddesc">${m.desc}</p>`:""}
+    ${m.vanilla?`<div class="dvan">Marqueur vanilla Skyrim SE</div>`:""}
+    <div style="font-size:9px;color:#3a2810;margin-bottom:7px">Pos: ${m.x.toFixed(1)}% · ${m.y.toFixed(1)}%</div>
+    <div class="brow">
+      <button class="btn bn" onclick="showEditForm('${m.id}')">✎ Modifier</button>
+      ${!m.vanilla?`<button class="btn br" onclick="delMarker('${m.id}')">✕ Supprimer</button>`:""}
+    </div>`;
+}
+
+function showCityDetail(city){
+  const pd=document.getElementById("panel-detail");
+  pd.style.display="block";
+  pd.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="dname" style="color:#e8c860">◆ ${city.name}</div>
+      <div class="dsub">${city.hold}</div></div>
+      <button class="cbtn" onclick="closeDetail()">✕</button>
+    </div>
+    <p style="font-size:11px;color:#7a6040;margin:8px 0 4px;line-height:1.6">
+      <b style="color:#9a8060">Repositionner :</b> clique-glisse le diamant sur la carte.<br>Sauvegarde automatique.</p>
+    <div style="font-size:9px;color:#3a2810;margin-top:6px">Pos: ${city.x.toFixed(1)}% · ${city.y.toFixed(1)}%</div>
+    <div class="brow" style="margin-top:10px">
+      <button class="btn bn" onclick="resetCity('${city.id}')">↺ Réinitialiser</button>
+      <button class="btn bn" onclick="closeDetail()">Fermer</button>
+    </div>`;
+}
+function resetCity(id){
+  const orig=CITIES_DEFAULT.find(c=>c.id===id);
+  const city=cities.find(c=>c.id===id);
+  if(!orig||!city)return;
+  city.x=orig.x; city.y=orig.y;
+  saveLS(); renderAll(); showCityDetail(city); showStatus(`✓ ${city.name} réinitialisé`);
+}
+
+/* ================================================================
+   ICON PICKER WIDGET
+================================================================ */
+function buildIconPicker(containerId, selectedIcon, selectedCat, selectedColor, onIconChange, onCatChange, onColorChange){
+  const wrap=document.getElementById(containerId);
+  function render(){
+    const catIcons=ICONS.filter(i=>i.c===pendingIconCatTab);
+    wrap.innerHTML=`
+      <div class="cat-tabs">
+        ${Object.entries(ICON_CATS).map(([k,v])=>`<button class="cat-tab${pendingIconCatTab===k?' sel':''}" onclick="setPendingCatTab('${k}')">${v.l}</button>`).join("")}
+      </div>
+      <div class="icon-picker">
+        ${catIcons.map(i=>`<button class="icon-btn${pendingIcon===i.s?' sel':''}" title="${i.l}" onclick="setPendingIcon('${i.s}','${i.c}')">${i.s}</button>`).join("")}
+      </div>
+      <div class="fl">Couleur</div>
+      <div class="color-swatches">
+        ${PALETTE.map(c=>`<div class="swatch${pendingColor===c?' sel':''}" style="background:${c}" title="${c}" onclick="setPendingColor('${c}')"></div>`).join("")}
+      </div>
+      <div class="color-custom-wrap">
+        <div class="fl" style="margin:0">Autre :</div>
+        <input type="color" value="${pendingColor}" id="custom-color-input" style="width:32px;height:22px;border:none;background:none;cursor:pointer;padding:0" oninput="setPendingColor(this.value)">
+        <span style="font-size:10px;color:#9a8060" id="color-preview-txt">${pendingColor}</span>
+      </div>`;
+  }
+  render();
+  // expose re-render
+  wrap._render=render;
+}
+
+function setPendingCatTab(cat){
+  pendingIconCatTab=cat;
+  document.querySelector("#icon-picker-wrap")._render();
+}
+function setPendingIcon(sym,cat){
+  pendingIcon=sym; pendingCat=cat;
+  // set default color for this cat
+  if(ICON_CATS[cat]) pendingColor=ICON_CATS[cat].col;
+  document.querySelector("#icon-picker-wrap")._render();
+}
+function setPendingColor(c){
+  pendingColor=c;
+  document.querySelector("#icon-picker-wrap")._render();
+}
+
+/* ================================================================
+   ADD MODE
+================================================================ */
+const btnAdd=document.getElementById("btn-add");
+const addHint=document.getElementById("add-hint");
+btnAdd.onclick=()=>{
+  addMode=!addMode;
+  btnAdd.classList.toggle("active",addMode);
+  btnAdd.textContent=addMode?"✕ Annuler":"+ Ajouter";
+  addHint.style.display=addMode?"block":"none";
+  mapWrap.style.cursor=addMode?"crosshair":"grab";
+  if(!addMode)closeDetail();
+  else renderMarkers();
+};
+mapView.addEventListener("click",e=>{
+  if(!addMode)return;
+  const r=mapImg.getBoundingClientRect();
+  const xp=((e.clientX-r.left)/imgW)*100;
+  const yp=((e.clientY-r.top)/imgH)*100;
+  if(xp<0||xp>100||yp<0||yp>100)return;
+  showAddForm(+xp.toFixed(2),+yp.toFixed(2));
+});
+
+function showAddForm(x,y){
+  pendingIcon="⛏"; pendingCat="mine"; pendingColor="#cd8b5a"; pendingIconCatTab="mine";
+  const pd=document.getElementById("panel-detail");
+  pd.style.display="block";
+  pd.innerHTML=`
+    <div style="font-size:12px;color:#FFD700;margin-bottom:8px;font-weight:600">★ Nouveau marqueur</div>
+    <label class="fl">Icône & Catégorie</label>
+    <div id="icon-picker-wrap"></div>
+    <label class="fl">Nom *</label>
+    <input class="fi" id="fn" placeholder="Nom du lieu...">
+    <label class="fl">Description / Notes</label>
+    <textarea class="fi" id="fd" rows="2" placeholder="Infos, dangers, loot..."></textarea>
+    <label class="fl">Photo in-game</label>
+    <input type="file" accept="image/*" id="fi2" style="font-size:10px;color:#9a8060">
+    <div id="fip"></div>
+    <div style="font-size:9px;color:#4a3820;margin-top:5px">Position: ${x.toFixed(1)}% · ${y.toFixed(1)}%</div>
+    <div class="brow">
+      <button class="btn bg" onclick="saveAdd(${x},${y})">★ Placer</button>
+      <button class="btn bn" onclick="cancelAdd()">Annuler</button>
+    </div>`;
+  buildIconPicker("icon-picker-wrap");
+  document.getElementById("fi2").onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{document.getElementById("fip").innerHTML=`<img src="${ev.target.result}" style="width:100%;border-radius:4px;margin-top:5px">`;};
+    r.readAsDataURL(f);
+  };
+}
+function saveAdd(x,y){
+  const name=document.getElementById("fn").value.trim();
+  if(!name){document.getElementById("fn").style.borderColor="#e07070";return;}
+  const img=document.querySelector("#fip img");
+  markers.push({id:"c"+Date.now(),name,icon:pendingIcon,cat:pendingCat,color:pendingColor,desc:document.getElementById("fd").value,image:img?img.src:null,x,y,vanilla:false});
+  saveLS(); cancelAdd();
+}
+function cancelAdd(){
+  addMode=false;
+  btnAdd.classList.remove("active"); btnAdd.textContent="+ Ajouter";
+  addHint.style.display="none"; mapWrap.style.cursor="grab";
+  closeDetail();
+}
+
+/* ================================================================
+   EDIT FORM
+================================================================ */
+function showEditForm(id){
+  const m=markers.find(x=>x.id===id); if(!m)return;
+  pendingIcon=m.icon||"⛏"; pendingCat=m.cat||"mine"; pendingColor=m.color||"#cd8b5a"; pendingIconCatTab=m.cat||"mine";
+  const pd=document.getElementById("panel-detail");
+  pd.innerHTML=`
+    <div style="font-size:12px;color:#c8a86b;margin-bottom:8px;font-weight:600">✎ Modifier</div>
+    <label class="fl">Icône & Catégorie</label>
+    <div id="icon-picker-wrap"></div>
+    <label class="fl">Nom</label>
+    <input class="fi" id="en" value="${m.name.replace(/"/g,"&quot;")}">
+    <label class="fl">Description</label>
+    <textarea class="fi" id="ed" rows="2">${m.desc||""}</textarea>
+    <label class="fl">Photo (remplacer)</label>
+    <input type="file" accept="image/*" id="ei" style="font-size:10px;color:#9a8060">
+    ${m.image?`<img src="${m.image}" style="width:100%;border-radius:4px;margin-top:5px" id="ecur">`:`<span id="ecur"></span>`}
+    <div class="brow">
+      <button class="btn bg" onclick="saveEdit('${id}')">✓ Sauvegarder</button>
+      <button class="btn bn" onclick="showDetail(markers.find(x=>x.id==='${id}'))">Annuler</button>
+    </div>`;
+  buildIconPicker("icon-picker-wrap");
+  document.getElementById("ei").onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{const el=document.getElementById("ecur");el.outerHTML=`<img src="${ev.target.result}" style="width:100%;border-radius:4px;margin-top:5px" id="ecur">`;};
+    r.readAsDataURL(f);
+  };
+}
+function saveEdit(id){
+  const m=markers.find(x=>x.id===id); if(!m)return;
+  m.name=document.getElementById("en").value;
+  m.icon=pendingIcon; m.cat=pendingCat; m.color=pendingColor;
+  m.desc=document.getElementById("ed").value;
+  const img=document.getElementById("ecur");
+  if(img&&img.tagName==="IMG")m.image=img.src;
+  selId=id; showDetail(m); saveLS(); renderAll();
+}
+function delMarker(id){
+  showModal("Supprimer ce marqueur ?","Cette action est irréversible.",[
+    {label:"Supprimer",cls:"btn br",cb:()=>{markers=markers.filter(x=>x.id!==id);saveLS();closeDetail();hideModal();}},
+    {label:"Annuler",cls:"btn bn",cb:hideModal}
+  ]);
+}
+
+/* ================================================================
+   DATABASE
+================================================================ */
+function getExportData(){
+  return {
+    version:4,
+    exported_at:new Date().toISOString(),
+    character:"Kodo Urmi",
+    game:"Skyrim Special Edition / Keizaal RP",
+    custom_markers:markers.filter(m=>!m.vanilla),
+    vanilla_markers:markers.filter(m=>m.vanilla),
+    cities,
+    stats:{total:markers.filter(m=>!m.vanilla).length}
+  };
+}
+document.getElementById("btn-export").onclick=()=>{
+  const data=getExportData();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`kodo_urmi_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showStatus(`✓ Exporté — ${data.stats.total} marqueur(s) perso`);
+};
+
+function importDB(file,cb){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      const imported=Array.isArray(data)?data:(data.custom_markers||[]);
+      cb(imported.filter(m=>m.id&&m.name&&typeof m.x==="number"),data);
+    }catch{showModal("Erreur","Fichier JSON invalide.",[{label:"OK",cls:"btn bn",cb:hideModal}]);}
+  };
+  r.readAsText(file);
+}
+function applyImport(data,imported,replace=false){
+  if(data.cities&&Array.isArray(data.cities))cities=data.cities;
+  const vanillaBase=(data.vanilla_markers&&Array.isArray(data.vanilla_markers))?data.vanilla_markers:[...VANILLA_MARKERS];
+  if(replace){
+    markers=[...vanillaBase,...imported.map(m=>({...m,vanilla:false}))];
+  }else{
+    const ex=new Set(markers.filter(m=>!m.vanilla).map(m=>m.id));
+    imported.filter(m=>!ex.has(m.id)).forEach(m=>markers.push({...m,vanilla:false}));
+    imported.filter(m=>ex.has(m.id)).forEach(u=>{const i=markers.findIndex(m=>m.id===u.id);if(i>-1)markers[i]={...u,vanilla:false};});
+  }
+  saveLS(); renderAll();
+}
+function handleImportFile(file){
+  importDB(file,(imported,data)=>{
+    const name=data.character||"?", date=data.exported_at?new Date(data.exported_at).toLocaleDateString("fr-FR"):"?";
+    showModal("Importer la base",`<b>${name}</b> (${date})<br>${imported.length} marqueur(s) + villes`,[
+      {label:"Fusionner",cls:"btn bg",cb:()=>{applyImport(data,imported,false);hideModal();showStatus(`✓ ${imported.length} fusionné(s)`);}},
+      {label:"Remplacer",cls:"btn br",cb:()=>{applyImport(data,imported,true);hideModal();showStatus(`✓ Base remplacée`);}},
+      {label:"Annuler",cls:"btn bn",cb:hideModal},
+    ]);
+  });
+}
+document.getElementById("db-import-input2").onchange=e=>{const f=e.target.files[0];if(!f)return;handleImportFile(f);e.target.value="";};
+document.getElementById("db-import-input").onchange=e=>{const f=e.target.files[0];if(!f)return;importDB(f,(imported,data)=>{applyImport(data,imported,true);if(mapLoaded)showStatus(`✓ ${imported.length} marqueur(s) importé(s)`);});};
+
+/* ================================================================
+   PERSISTENCE
+================================================================ */
+function saveLS(){
+  try{
+    localStorage.setItem("kodo_custom",JSON.stringify(markers.filter(m=>!m.vanilla)));
+    localStorage.setItem("kodo_vanilla",JSON.stringify(markers.filter(m=>m.vanilla)));
+    localStorage.setItem("kodo_cities",JSON.stringify(cities));
+  }catch(e){}
+}
+function loadLS(){
+  try{
+    const rc=localStorage.getItem("kodo_custom");
+    const rv=localStorage.getItem("kodo_vanilla");
+    const rci=localStorage.getItem("kodo_cities");
+    const vanillaBase=rv?JSON.parse(rv):[...VANILLA_MARKERS];
+    const custom=rc?JSON.parse(rc):[];
+    markers=[...vanillaBase,...custom];
+    if(rci)cities=JSON.parse(rci);
+  }catch(e){markers=[...VANILLA_MARKERS];cities=CITIES_DEFAULT.map(c=>({...c}));}
+}
+loadLS();
+
+/* ================================================================
+   MODAL
+================================================================ */
+function showModal(title,body,buttons){
+  document.getElementById("modal-title").textContent=title;
+  document.getElementById("modal-body").innerHTML=body;
+  const mb=document.getElementById("modal-btns");mb.innerHTML="";
+  buttons.forEach(b=>{const btn=document.createElement("button");btn.className="btn "+b.cls;btn.textContent=b.label;btn.onclick=b.cb;mb.appendChild(btn);});
+  document.getElementById("modal-bg").style.display="flex";
+}
+function hideModal(){document.getElementById("modal-bg").style.display="none";}
+document.getElementById("modal-bg").addEventListener("click",e=>{if(e.target===e.currentTarget)hideModal();});
+
+/* ================================================================
+   STATUS TOAST
+================================================================ */
+function showStatus(msg){
+  const el=document.getElementById("db-status");
+  el.textContent=msg;el.style.display="block";
+  clearTimeout(el._t);el._t=setTimeout(()=>{el.style.display="none";},3000);
+}
+</script>
+</body>
+</html>
