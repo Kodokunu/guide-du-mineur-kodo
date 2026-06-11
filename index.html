@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>Kodo Urmi — Carnet du Mineur</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Palatino Linotype',Palatino,serif;background:#0a0805;color:#e8d5b0;height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
@@ -18,13 +21,8 @@ select{background:#16120a;color:#c8a86b;border:1px solid #3a2a10;border-radius:4
 .tb.green{background:#0e1f06;color:#90c060;border-color:#2a4010}
 .tb.blue{background:#060e1f;color:#60a0e0;border-color:#102a50}
 /* LOAD */
-#load-screen{position:fixed;inset:0;background:#0a0805;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:14px}
-#load-screen h2{color:#c8a86b;font-size:22px;letter-spacing:3px}
-.lbox{color:#5a4020;font-size:12px;border:1px solid #2a1a08;padding:12px 18px;border-radius:6px;line-height:2.2;max-width:440px;width:100%}
-.load-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.lbtn{background:#1a2a08;color:#90c060;border:1px solid #2a4010;border-radius:4px;padding:9px 22px;font-size:13px;cursor:pointer;font-family:inherit;letter-spacing:1px}
-.lbtn.blue{background:#060e1f;color:#60a0e0;border-color:#102a50}
-#file-input,#db-import-input{display:none}
+#load-screen{position:fixed;inset:0;background:#0a0805;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:6px}
+#load-screen h2{color:#c8a86b;font-size:24px;letter-spacing:4px}
 /* MAP */
 #body{flex:1;display:flex;overflow:hidden}
 #map-wrap{flex:1;position:relative;overflow:hidden;background:#0a0805;cursor:grab}
@@ -87,6 +85,21 @@ textarea.fi{resize:vertical}
 .cat-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
 .cat-tab{background:#16120a;border:1px solid #2a1a08;border-radius:4px;padding:3px 8px;font-size:10px;color:#9a8060;cursor:pointer}
 .cat-tab.sel{background:#1a1008;border-color:#7a6040;color:#c8a86b}
+/* SYNC STATUS */
+#sync-status{position:absolute;top:44px;right:12px;background:#06101aee;border:1px solid #102a50;border-radius:6px;padding:4px 11px;font-size:11px;color:#60a0e0;z-index:10;display:flex;align-items:center;gap:6px}
+#sync-dot{width:7px;height:7px;border-radius:50%;background:#60a0e0;flex-shrink:0}
+#sync-dot.ok{background:#90c060}
+#sync-dot.err{background:#e07070}
+#sync-dot.off{background:#5a4020}
+/* Firebase config modal */
+#firebase-setup{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:400;display:flex;align-items:center;justify-content:center}
+#firebase-setup-box{background:#0d0a06;border:1px solid #3a2a10;border-radius:10px;padding:24px 28px;max-width:500px;width:94%;color:#e8d5b0}
+#firebase-setup-box h2{color:#c8a86b;font-size:16px;margin-bottom:6px;letter-spacing:1px}
+#firebase-setup-box p{font-size:12px;color:#7a6040;line-height:1.7;margin-bottom:12px}
+#firebase-setup-box .fi{margin-bottom:8px}
+#firebase-setup-box code{background:#16120a;padding:2px 6px;border-radius:3px;font-size:11px;color:#90c060;font-family:monospace}
+.setup-step{border:1px solid #2a1a08;border-radius:6px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#9a8060;line-height:1.8}
+.setup-step b{color:#c8a86b}
 /* COLOR PICKER */
 .color-swatches{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}
 .swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0}
@@ -97,15 +110,15 @@ textarea.fi{resize:vertical}
 <body>
 
 <div id="load-screen">
-  <h2>⛏ KODO URMI</h2>
-  <p>Carnet du Mineur — Keizaal · Skyrim Special Edition</p>
-  <div class="lbox">Charge l'image de ta carte Skyrim HD.<br>Elle reste uniquement sur ton PC.</div>
-  <div class="load-btns">
-    <label class="lbtn" for="file-input">📁 Charger la carte</label>
-    <label class="lbtn blue" for="db-import-input">📦 Importer base de données</label>
+  <div style="font-size:38px;margin-bottom:6px">⛏</div>
+  <h2>KODO URMI</h2>
+  <p style="font-size:13px;color:#7a6040;letter-spacing:1px">Carnet du Mineur · Keizaal</p>
+  <div id="load-bar-wrap" style="width:260px;height:4px;background:#1a1008;border-radius:2px;overflow:hidden;margin-top:8px">
+    <div id="load-bar" style="height:100%;width:0%;background:#c8a86b;transition:width .3s"></div>
   </div>
-  <input type="file" id="file-input" accept="image/*">
-  <input type="file" id="db-import-input" accept=".json">
+  <div id="load-msg" style="font-size:11px;color:#5a4020;margin-top:8px;letter-spacing:1px">Chargement de la carte...</div>
+  <input type="file" id="file-input" accept="image/*" style="display:none">
+  <input type="file" id="db-import-input" accept=".json" style="display:none">
 </div>
 
 <div id="topbar">
@@ -133,6 +146,7 @@ textarea.fi{resize:vertical}
     </div>
     <div id="add-hint">Cliquez sur la carte pour placer un marqueur</div>
     <div id="db-status"></div>
+    <div id="sync-status" style="display:none"><div id="sync-dot" class="off"></div><span id="sync-txt">Non connecté</span></div>
     <div id="legend">
       <div class="leg-title">CATÉGORIES</div>
       <div id="leg-cats"></div>
@@ -346,20 +360,44 @@ document.getElementById("bzr").onclick=()=>{sc=1;ox=0;oy=0;applyT();};
 /* ================================================================
    LOAD IMAGE
 ================================================================ */
-function initMap(url){
+const MAP_URL = "https://raw.githubusercontent.com/Kodokunu/guide-du-mineur-kodo/main/map.jpg";
+
+function initMap(url, label){
+  const bar = document.getElementById("load-bar");
+  const msg = document.getElementById("load-msg");
+  if(msg) msg.textContent = label||"Chargement de la carte...";
+  // Animate bar while loading
+  let prog = 0;
+  const tick = setInterval(()=>{
+    prog = Math.min(prog + Math.random()*8, 88);
+    if(bar) bar.style.width = prog + "%";
+  }, 120);
   mapImg.onload=()=>{
+    clearInterval(tick);
+    if(bar) bar.style.width="100%";
     imgW=mapImg.naturalWidth; imgH=mapImg.naturalHeight;
     mapImg.style.width=imgW+"px"; mapImg.style.height=imgH+"px";
     svg.setAttribute("width",imgW); svg.setAttribute("height",imgH);
     svg.style.width=imgW+"px"; svg.style.height=imgH+"px";
     mapLoaded=true;
-    document.getElementById("load-screen").style.display="none";
-    renderAll();
+    setTimeout(()=>{ document.getElementById("load-screen").style.display="none"; renderAll(); }, 200);
+  };
+  mapImg.onerror=()=>{
+    clearInterval(tick);
+    if(msg) msg.textContent="❌ Impossible de charger la carte. Vérifie ta connexion.";
+    if(bar) bar.style.background="#e07070";
   };
   mapImg.src=url;
 }
+
+// Auto-load map from GitHub on startup
+window.addEventListener("DOMContentLoaded",()=>{
+  initMap(MAP_URL, "Chargement de la carte depuis GitHub...");
+});
+
+// Fallback: manual file input (kept hidden, accessible via dev tools if needed)
 document.getElementById("file-input").onchange=e=>{
-  const f=e.target.files[0];if(!f)return; initMap(URL.createObjectURL(f));
+  const f=e.target.files[0];if(!f)return; initMap(URL.createObjectURL(f),"Chargement...");
 };
 
 /* ================================================================
@@ -832,6 +870,158 @@ function showStatus(msg){
   el.textContent=msg;el.style.display="block";
   clearTimeout(el._t);el._t=setTimeout(()=>{el.style.display="none";},3000);
 }
+</script>
+
+<!-- Firebase Setup Modal -->
+<div id="firebase-setup" style="display:none">
+  <div id="firebase-setup-box">
+    <h2>🔥 Connexion Firebase</h2>
+    <p>Entre ta configuration Firebase pour activer la sync automatique entre tes PCs.<br>
+    Tes données seront stockées dans <b>Firestore</b> (gratuit jusqu'à 50k lectures/jour).</p>
+    <label class="fl">API Key</label>
+    <input class="fi" id="fb-apikey" placeholder="AIzaSy...">
+    <label class="fl">Auth Domain</label>
+    <input class="fi" id="fb-authdomain" placeholder="ton-projet.firebaseapp.com">
+    <label class="fl">Project ID</label>
+    <input class="fi" id="fb-projectid" placeholder="ton-projet">
+    <label class="fl">App ID</label>
+    <input class="fi" id="fb-appid" placeholder="1:123456:web:abcdef">
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn bg" onclick="connectFirebase()">🔥 Connecter</button>
+      <button class="btn bn" onclick="skipFirebase()">Utiliser sans sync</button>
+    </div>
+    <div id="fb-error" style="font-size:11px;color:#e07070;margin-top:8px;display:none"></div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   FIREBASE SYNC
+================================================================ */
+let db = null;
+let fbUnsubscribe = null;
+let fbEnabled = false;
+const FB_DOC = "kodo_urmi_save"; // document ID in Firestore
+
+function setSyncStatus(state, msg){
+  const dot = document.getElementById("sync-dot");
+  const txt = document.getElementById("sync-txt");
+  const el  = document.getElementById("sync-status");
+  el.style.display = "flex";
+  dot.className = ""; dot.classList.add(state);
+  txt.textContent = msg;
+}
+
+function fbConfig(){
+  try{ return JSON.parse(localStorage.getItem("kodo_fb_config")||"null"); }catch{ return null; }
+}
+
+function initFirebaseApp(){
+  const cfg = fbConfig(); if(!cfg) return false;
+  try{
+    // avoid re-init
+    if(!firebase.apps.length) firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    return true;
+  }catch(e){ console.error("Firebase init error",e); return false; }
+}
+
+function connectFirebase(){
+  const cfg = {
+    apiKey:      document.getElementById("fb-apikey").value.trim(),
+    authDomain:  document.getElementById("fb-authdomain").value.trim(),
+    projectId:   document.getElementById("fb-projectid").value.trim(),
+    appId:       document.getElementById("fb-appid").value.trim(),
+    storageBucket: document.getElementById("fb-authdomain").value.trim().replace("firebaseapp.com","appspot.com"),
+  };
+  if(!cfg.apiKey||!cfg.projectId){ showFbError("Remplis au moins API Key et Project ID."); return; }
+  localStorage.setItem("kodo_fb_config", JSON.stringify(cfg));
+  document.getElementById("firebase-setup").style.display="none";
+  if(initFirebaseApp()) startFirebaseSync();
+  else showFbError("Erreur de connexion. Vérifie ta config.");
+}
+
+function skipFirebase(){
+  document.getElementById("firebase-setup").style.display="none";
+  setSyncStatus("off","Sync désactivée");
+}
+
+function showFbError(msg){
+  const el = document.getElementById("fb-error");
+  el.textContent = msg; el.style.display = "block";
+}
+
+function startFirebaseSync(){
+  if(!db) return;
+  fbEnabled = true;
+  setSyncStatus("ok","Connexion...");
+
+  // Listen for remote changes
+  const docRef = db.collection("carnet").doc(FB_DOC);
+  fbUnsubscribe = docRef.onSnapshot(snap=>{
+    if(!snap.exists){ fbPush(); return; } // first time: push local data
+    const remote = snap.data();
+    const remoteTs = remote.updated_at||0;
+    const localTs  = parseInt(localStorage.getItem("kodo_local_ts")||"0");
+    if(remoteTs > localTs){
+      // Remote is newer → pull
+      applyRemoteData(remote);
+      setSyncStatus("ok","Sync ✓ — " + new Date(remoteTs).toLocaleTimeString("fr-FR"));
+    } else {
+      setSyncStatus("ok","Sync ✓");
+    }
+  }, err=>{
+    console.error("Firestore error",err);
+    setSyncStatus("err","Erreur sync — " + err.code);
+  });
+}
+
+function fbPush(){
+  if(!db||!fbEnabled) return;
+  const ts = Date.now();
+  localStorage.setItem("kodo_local_ts", ts.toString());
+  const data = {
+    updated_at: ts,
+    custom_markers: markers.filter(m=>!m.vanilla),
+    vanilla_markers: markers.filter(m=>m.vanilla),
+    cities: cities,
+  };
+  db.collection("carnet").doc(FB_DOC).set(data)
+    .then(()=>setSyncStatus("ok","Sauvegardé ✓ — " + new Date().toLocaleTimeString("fr-FR")))
+    .catch(e=>{setSyncStatus("err","Erreur push — "+e.code); console.error(e);});
+}
+
+function applyRemoteData(remote){
+  if(remote.cities && Array.isArray(remote.cities)) cities = remote.cities;
+  const vanillaBase = (remote.vanilla_markers&&Array.isArray(remote.vanilla_markers))
+    ? remote.vanilla_markers : [...VANILLA_MARKERS];
+  const custom = (remote.custom_markers&&Array.isArray(remote.custom_markers))
+    ? remote.custom_markers : [];
+  markers = [...vanillaBase, ...custom.map(m=>({...m,vanilla:false}))];
+  saveLS();
+  if(mapLoaded) renderAll();
+}
+
+// Override saveLS to also push to Firebase
+const _origSaveLS = saveLS;
+function saveLS(){
+  _origSaveLS();
+  if(fbEnabled) fbPush();
+}
+
+// Show setup modal on first load if no config saved, else auto-connect
+window.addEventListener("load",()=>{
+  const cfg = fbConfig();
+  if(cfg){
+    if(initFirebaseApp()) startFirebaseSync();
+    else setSyncStatus("off","Config Firebase invalide");
+  } else {
+    // Show setup after a short delay (let map load screen appear first)
+    setTimeout(()=>{
+      document.getElementById("firebase-setup").style.display="flex";
+    }, 500);
+  }
+});
 </script>
 </body>
 </html>
