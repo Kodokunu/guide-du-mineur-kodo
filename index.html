@@ -42,9 +42,25 @@ select{background:#16120a;color:#c8a86b;border:1px solid #3a2a10;border-radius:4
 #db-status{position:absolute;top:12px;right:12px;background:#0a1a08ee;border:1px solid #2a4010;border-radius:6px;padding:5px 12px;font-size:11px;color:#90c060;z-index:10;display:none}
 /* PANEL */
 #panel{width:285px;background:#0a0805;border-left:1px solid #1a1008;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
-#panel-detail{padding:13px;border-bottom:1px solid #1a1008;overflow-y:auto;display:none;max-height:60%}
+#panel-detail{padding:13px;border-bottom:1px solid #1a1008;overflow-y:auto;display:none;max-height:52%}
 #panel-count{padding:5px 13px 4px;font-size:10px;color:#5a4020;border-bottom:1px solid #1a1008;flex-shrink:0}
 #panel-list{flex:1;overflow-y:auto}
+/* FILTER SIDEBAR */
+#filter-panel{width:200px;background:#0a0805;border-right:1px solid #1a1008;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;padding:10px 0}
+.fp-title{font-size:9px;color:#5a4020;letter-spacing:1px;padding:0 12px;margin-bottom:5px;margin-top:8px}
+.fp-title:first-child{margin-top:0}
+.filter-chip{display:flex;align-items:center;gap:7px;padding:5px 12px;cursor:pointer;font-size:11px;color:#9a8060;border-left:2px solid transparent;transition:all .12s}
+.filter-chip:hover{background:#12100a;color:#c8a86b}
+.filter-chip.active{color:#c8a86b;border-left-color:var(--fc);background:#16120a}
+.filter-chip input[type=checkbox]{display:none}
+.chip-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;border:1px solid transparent}
+.chip-diamond{width:9px;height:9px;flex-shrink:0;transform:rotate(45deg)}
+.fp-sep{border:none;border-top:1px solid #1a1008;margin:6px 0}
+/* Search bar */
+#search-wrap{padding:8px 10px;border-bottom:1px solid #1a1008;flex-shrink:0}
+#search-input{width:100%;background:#16120a;color:#e8d5b0;border:1px solid #2a1a08;border-radius:4px;padding:4px 8px;font-size:11px;outline:none;font-family:inherit}
+#search-input:focus{border-color:#5a4020}
+#search-input::placeholder{color:#4a3820}
 .cat-hdr{padding:4px 13px;background:#0d0a06;border-bottom:1px solid #1a1008;display:flex;align-items:center;gap:6px}
 .cat-hdr .lbl{font-size:9px;color:#7a6040;font-weight:600;letter-spacing:1px;flex:1}
 .cat-hdr .cnt{font-size:9px;color:#3a2810}
@@ -127,18 +143,48 @@ textarea.fi{resize:vertical}
     <div class="sub-title">Keizaal · Skyrim Special Edition</div>
   </div>
   <div id="controls">
-    <label class="ck-label"><input type="checkbox" id="ck-cities" checked> Villes</label>
-    <select id="sel-cat"><option value="all">Toutes catégories</option></select>
-    <label class="ck-label"><input type="checkbox" id="ck-van" checked> Vanilla</label>
-    <label class="ck-label"><input type="checkbox" id="ck-cus" checked> Mes marqueurs</label>
     <button class="tb active" id="btn-add">+ Ajouter</button>
     <button class="tb green" id="btn-export">⬇ Exporter BD</button>
     <label class="tb blue" for="db-import-input2">⬆ Importer BD</label>
     <input type="file" id="db-import-input2" accept=".json" style="display:none">
+    <!-- hidden filter state inputs kept for JS compat -->
+    <input type="checkbox" id="ck-cities" checked style="display:none">
+    <input type="checkbox" id="ck-van" checked style="display:none">
+    <input type="checkbox" id="ck-cus" checked style="display:none">
+    <select id="sel-cat" style="display:none"><option value="all">all</option></select>
   </div>
 </div>
 
 <div id="body">
+  <!-- FILTER SIDEBAR -->
+  <div id="filter-panel">
+    <div id="search-wrap">
+      <input type="text" id="search-input" placeholder="🔍 Rechercher...">
+    </div>
+
+    <div class="fp-title">AFFICHAGE</div>
+    <label class="filter-chip active" id="fc-cities" style="--fc:#e8c860" onclick="toggleFC('cities')">
+      <div class="chip-diamond" style="background:#e8c860;border:1px solid #b8901a"></div>Villes
+    </label>
+    <label class="filter-chip active" id="fc-van" style="--fc:#c8a86b" onclick="toggleFC('van')">
+      <div class="chip-dot" style="background:#c8a86b;border-color:#a07840"></div>Vanilla
+    </label>
+    <label class="filter-chip active" id="fc-cus" style="--fc:#FF6B35" onclick="toggleFC('cus')">
+      <div class="chip-dot" style="background:#FF6B35;border-color:#c04010"></div>Mes marqueurs
+    </label>
+
+    <hr class="fp-sep">
+    <div class="fp-title">CATÉGORIES</div>
+    <label class="filter-chip active" id="fc-cat-all" style="--fc:#c8a86b" onclick="setCatFilter('all')">
+      <div class="chip-dot" style="background:#c8a86b"></div>Toutes
+    </label>
+    <div id="fc-cats"></div>
+
+    <hr class="fp-sep">
+    <div class="fp-title">MINERAIS (mines)</div>
+    <div id="fc-ores"></div>
+  </div>
+
   <div id="map-wrap">
     <div id="map-view">
       <img id="map-img" draggable="false" alt="">
@@ -181,10 +227,11 @@ textarea.fi{resize:vertical}
 const ICON_CATS = {
   mine:     { l:"Mines & Ressources",  col:"#cd8b5a" },
   danger:   { l:"Dangers",             col:"#e05050" },
-  poi:      { l:"Points d'intérêt",    col:"#60a0e0" },
+  poi:      { l:"Points d'intérêt",   col:"#60a0e0" },
   structure:{ l:"Structures",          col:"#c0c0c0" },
   nature:   { l:"Nature",              col:"#80c060" },
   camp:     { l:"Camps & Factions",    col:"#e0b040" },
+  ville:    { l:"Villes & Villages",   col:"#e8c860" },
   perso:    { l:"Personnalisé",        col:"#FF6B35" },
 };
 
@@ -244,6 +291,15 @@ const ICONS = [
   {s:"🧙",  l:"Mages",            c:"camp"},
   {s:"🏹",  l:"Chasseurs",        c:"camp"},
   {s:"👑",  l:"Roi / Chef",       c:"camp"},
+  // Villes & Villages
+  {s:"◆",   l:"Grande ville",     c:"ville"},
+  {s:"🏙️",  l:"Ville",            c:"ville"},
+  {s:"🏘️",  l:"Village",          c:"ville"},
+  {s:"🏚️",  l:"Hameau / Ruine",   c:"ville"},
+  {s:"⚓",  l:"Port / Quai",      c:"ville"},
+  {s:"🧱",  l:"Remparts",         c:"ville"},
+  {s:"🪙",  l:"Commerce",         c:"ville"},
+  {s:"🍺",  l:"Auberge / Taverne",c:"ville"},
   // Personnalisé
   {s:"★",   l:"Favori",           c:"perso"},
   {s:"✅",  l:"Fait",             c:"perso"},
@@ -403,20 +459,112 @@ document.getElementById("file-input").onchange=e=>{
 /* ================================================================
    FILTERS
 ================================================================ */
-const selCat=document.getElementById("sel-cat");
-const ckVan =document.getElementById("ck-van");
-const ckCus =document.getElementById("ck-cus");
-const ckCities=document.getElementById("ck-cities");
-Object.entries(ICON_CATS).forEach(([k,v])=>{
-  const o=document.createElement("option");o.value=k;o.textContent=v.l;selCat.appendChild(o);
+const selCat   = document.getElementById("sel-cat");
+const ckVan    = document.getElementById("ck-van");
+const ckCus    = document.getElementById("ck-cus");
+const ckCities = document.getElementById("ck-cities");
+
+// Filter state — driven by sidebar chips
+let fState = {
+  showCities: true,
+  showVan:    true,
+  showCus:    true,
+  cat:        "all",   // "all" or cat key
+  ore:        "all",   // "all" or color hex (mine color = ore proxy)
+  search:     "",
+};
+
+// Ore color → label mapping for mine markers
+const ORE_COLORS = {
+  "#cd8b5a": {l:"Fer",            c:"#cd8b5a"},
+  "#ffe566": {l:"Or",             c:"#ffe566"},
+  "#e8e8e8": {l:"Argent",         c:"#e8e8e8"},
+  "#e09050": {l:"Corindon",       c:"#e09050"},
+  "#80d080": {l:"Orichalque",     c:"#80d080"},
+  "#c0a0f0": {l:"Ébonite",        c:"#c0a0f0"},
+  "#50dde8": {l:"Malachite",      c:"#50dde8"},
+  "#d0c0f0": {l:"Pierre de lune", c:"#d0c0f0"},
+  "#a8eef4": {l:"Vif-argent",     c:"#a8eef4"},
+};
+
+function buildFilterPanel(){
+  // Category chips
+  const fcCats = document.getElementById("fc-cats");
+  fcCats.innerHTML = "";
+  Object.entries(ICON_CATS).forEach(([k,v])=>{
+    const el = document.createElement("label");
+    el.className = "filter-chip active";
+    el.id = "fc-cat-"+k;
+    el.style.setProperty("--fc", v.col);
+    el.innerHTML = `<div class="chip-dot" style="background:${v.col}"></div>${v.l}`;
+    el.onclick = ()=>setCatFilter(k);
+    fcCats.appendChild(el);
+  });
+
+  // Ore chips (only mine-cat markers)
+  const fcOres = document.getElementById("fc-ores");
+  fcOres.innerHTML = "";
+  // "all ores" chip
+  const allOre = document.createElement("label");
+  allOre.className = "filter-chip active"; allOre.id = "fc-ore-all";
+  allOre.style.setProperty("--fc","#c8a86b");
+  allOre.innerHTML = `<div class="chip-dot" style="background:#c8a86b"></div>Tous`;
+  allOre.onclick = ()=>setOreFilter("all");
+  fcOres.appendChild(allOre);
+
+  Object.entries(ORE_COLORS).forEach(([col,info])=>{
+    const el = document.createElement("label");
+    el.className = "filter-chip"; el.id = "fc-ore-"+col.replace("#","");
+    el.style.setProperty("--fc", col);
+    el.innerHTML = `<div class="chip-dot" style="background:${col};border-color:${col}"></div>${info.l}`;
+    el.onclick = ()=>setOreFilter(col);
+    fcOres.appendChild(el);
+  });
+}
+
+function toggleFC(key){
+  if(key==="cities"){ fState.showCities=!fState.showCities; document.getElementById("fc-cities").classList.toggle("active",fState.showCities); ckCities.checked=fState.showCities; }
+  if(key==="van"){    fState.showVan=!fState.showVan;       document.getElementById("fc-van").classList.toggle("active",fState.showVan);       ckVan.checked=fState.showVan; }
+  if(key==="cus"){    fState.showCus=!fState.showCus;       document.getElementById("fc-cus").classList.toggle("active",fState.showCus);       ckCus.checked=fState.showCus; }
+  renderAll();
+}
+
+function setCatFilter(cat){
+  fState.cat = cat;
+  // Update active state on all cat chips
+  document.getElementById("fc-cat-all").classList.toggle("active", cat==="all");
+  Object.keys(ICON_CATS).forEach(k=>{
+    const el=document.getElementById("fc-cat-"+k);
+    if(el) el.classList.toggle("active", cat==="all"||cat===k);
+  });
+  renderAll();
+}
+
+function setOreFilter(col){
+  fState.ore = col;
+  document.getElementById("fc-ore-all").classList.toggle("active", col==="all");
+  Object.keys(ORE_COLORS).forEach(k=>{
+    const el=document.getElementById("fc-ore-"+k.replace("#",""));
+    if(el) el.classList.toggle("active", col==="all"||col===k);
+  });
+  renderAll();
+}
+
+// Search
+document.addEventListener("DOMContentLoaded",()=>{
+  const si = document.getElementById("search-input");
+  if(si) si.addEventListener("input",e=>{ fState.search=e.target.value.toLowerCase(); renderAll(); });
+  buildFilterPanel();
 });
-[selCat,ckVan,ckCus,ckCities].forEach(el=>el.addEventListener("change",renderAll));
 
 function visible(){
   return markers.filter(m=>{
-    if(!ckVan.checked&&m.vanilla)return false;
-    if(!ckCus.checked&&!m.vanilla)return false;
-    if(selCat.value!=="all"&&m.cat!==selCat.value)return false;
+    if(!fState.showVan && m.vanilla) return false;
+    if(!fState.showCus && !m.vanilla) return false;
+    if(fState.cat!=="all" && m.cat!==fState.cat) return false;
+    if(fState.ore!=="all" && m.cat==="mine" && m.color!==fState.ore) return false;
+    if(fState.ore!=="all" && m.cat!=="mine") return false; // when filtering ore, hide non-mine
+    if(fState.search && !m.name.toLowerCase().includes(fState.search) && !(m.desc||"").toLowerCase().includes(fState.search)) return false;
     return true;
   });
 }
