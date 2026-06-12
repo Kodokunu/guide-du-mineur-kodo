@@ -26,8 +26,8 @@ select{background:#16120a;color:#c8a86b;border:1px solid #3a2a10;border-radius:4
 /* MAP */
 #body{flex:1;display:flex;overflow:hidden}
 #map-wrap{flex:1;position:relative;overflow:hidden;background:#0a0805;cursor:grab}
-#map-view{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;line-height:0}
-#map-img{display:block;max-width:none;pointer-events:none;image-rendering:auto}
+#map-view{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;line-height:0;image-rendering:auto}
+#map-img{display:block;max-width:none;pointer-events:none;image-rendering:auto;-ms-interpolation-mode:bicubic}
 #marker-svg{position:absolute;top:0;left:0;overflow:visible}
 /* LEGEND */
 #legend{position:absolute;bottom:12px;left:12px;background:#0a0805ee;border:1px solid #2a1a08;border-radius:6px;padding:8px 12px;z-index:10;pointer-events:none;font-size:10px;max-height:60vh;overflow-y:auto}
@@ -321,50 +321,50 @@ const PALETTE = [
    VANILLA MINES DATA
 ================================================================ */
 const VANILLA_MARKERS = [
-  {id:"v1", name:"Halted Stream Camp",   icon:"⛏", cat:"mine", color:"#cd8b5a", x:40, y:28, desc:"Massif de fer + sort Transmutation Minérale. Camp de bandits.", vanilla:true},
-  {id:"v2", name:"Embershard Mine",      icon:"⛏", cat:"mine", color:"#cd8b5a", x:33, y:58, desc:"Mine de fer proche de Riverwood.", vanilla:true},
-  {id:"v3", name:"Kolskeggr Mine",       icon:"⛏", cat:"mine", color:"#ffe566", x:20, y:63, desc:"Plus grande mine d'or. Infestée de Forsworn.", vanilla:true},
-  {id:"v4", name:"Darkwater Crossing",   icon:"⛏", cat:"mine", color:"#e09050", x:62, y:48, desc:"Mine de corindon dans le Rift.", vanilla:true},
-  {id:"v5", name:"Bilegulch Mine",       icon:"⛏", cat:"mine", color:"#80d080", x:25, y:58, desc:"Mine d'orichalque. Bandits.", vanilla:true},
-  {id:"v6", name:"Dushnikh Mine",        icon:"⛏", cat:"mine", color:"#80d080", x:16, y:70, desc:"Mine d'orichalque. Camp Orc.", vanilla:true},
-  {id:"v7", name:"Gloombound Mine",      icon:"⛏", cat:"mine", color:"#c0a0f0", x:78, y:63, desc:"Seule grande mine d'ébonite. Camp Orc Narzulbur.", vanilla:true},
-  {id:"v8", name:"Redbelly Mine",        icon:"⛏", cat:"mine", color:"#cd8b5a", x:72, y:72, desc:"Mine de fer à Shor's Stone.", vanilla:true},
-  {id:"v9", name:"Left Hand Mine",       icon:"⛏", cat:"mine", color:"#cd8b5a", x:13, y:67, desc:"Mine de fer près de Markarth.", vanilla:true},
-  {id:"v10",name:"Iron-Breaker Mine",    icon:"⛏", cat:"mine", color:"#cd8b5a", x:42, y:8,  desc:"Mine de fer à Dawnstar.", vanilla:true},
-  {id:"v11",name:"Quicksilver Mine",     icon:"⛏", cat:"mine", color:"#a8eef4", x:45, y:8,  desc:"Mine de vif-argent à Dawnstar.", vanilla:true},
-  {id:"v12",name:"Steamscorch Mine",     icon:"⛏", cat:"mine", color:"#50dde8", x:65, y:30, desc:"Mine de malachite à Kynesgrove.", vanilla:true},
-  {id:"v13",name:"Northwind Mine",       icon:"⛏", cat:"mine", color:"#cd8b5a", x:76, y:42, desc:"Mine abandonnée, Montagnes de l'Aurore.", vanilla:true},
-  {id:"v14",name:"Cidhna Mine",          icon:"⛏", cat:"mine", color:"#e8e8e8", x:12, y:68, desc:"Prison/mine d'argent de Markarth.", vanilla:true},
-  {id:"v15",name:"Soljund's Sinkhole",   icon:"⛏", cat:"mine", color:"#d0c0f0", x:28, y:60, desc:"Mine de pierre de lune. Draugrs.", vanilla:true},
-  {id:"v16",name:"Knifepoint Ridge",     icon:"⛏", cat:"mine", color:"#e09050", x:33, y:72, desc:"Mine de corindon. Bandits.", vanilla:true},
-  {id:"v17",name:"Mor Khazgur Mine",     icon:"⛏", cat:"mine", color:"#80d080", x:8,  y:42, desc:"Mine d'orichalque. Camp Orc, extrême ouest.", vanilla:true},
-  {id:"v18",name:"Kagrenzel",            icon:"🏗️", cat:"structure", color:"#c0c0c0", x:82, y:40, desc:"Ruine Dwemer. Chute spectaculaire, trésor au fond.", vanilla:true},
-  {id:"v19",name:"Falkreath - filons",   icon:"🪨", cat:"mine", color:"#cd8b5a", x:38, y:80, desc:"Filons de fer dans la région de Falkreath.", vanilla:true},
-  {id:"v20",name:"Goldenrock Mine",      icon:"⛏", cat:"mine", color:"#e09050", x:55, y:78, desc:"Mine de corindon dans le Rift.", vanilla:true},
-  {id:"v21",name:"Cronvangr Cave",       icon:"🚪", cat:"structure", color:"#8050d0", x:67, y:43, desc:"Grotte infestée de vampires, Eastmarch.", vanilla:true},
-  {id:"v22",name:"Pinepeak Cavern",      icon:"🚪", cat:"structure", color:"#80c060", x:68, y:55, desc:"Grotte avec ours dans le Rift.", vanilla:true},
-  {id:"v23",name:"Snapleg Cave",         icon:"🚪", cat:"structure", color:"#8050d0", x:71, y:60, desc:"Grotte de sorcières hagraven.", vanilla:true},
-  {id:"v24",name:"Chillwind Depths",     icon:"🚪", cat:"structure", color:"#c0c0c0", x:16, y:48, desc:"Grotte avec Chaurus dans le Reach.", vanilla:true},
-  {id:"v25",name:"Bruca's Leap Redoubt", icon:"🏕️", cat:"camp",     color:"#e0b040", x:18, y:54, desc:"Camp Forsworn dans le Reach.", vanilla:true},
+  {id:"v1", name:"Camp du Ruisseau Arrêté", icon:"⛏", cat:"mine", color:"#cd8b5a", x:40, y:28, desc:"Gisement de fer massif + sort Transmutation Minérale. Camp de bandits au nord de Blancherive.", vanilla:true},
+  {id:"v2", name:"Mine d'Embreshard",       icon:"⛏", cat:"mine", color:"#cd8b5a", x:33, y:58, desc:"Mine de fer proche de Boiséclat, idéale en début de partie.", vanilla:true},
+  {id:"v3", name:"Mine de Kolskeggr",       icon:"⛏", cat:"mine", color:"#ffe566", x:20, y:63, desc:"Plus grande mine d'or de Bordeciel. Infestée de Renégats.", vanilla:true},
+  {id:"v4", name:"Croisée des Eaux Sombres",icon:"⛏", cat:"mine", color:"#e09050", x:62, y:48, desc:"Mine de corindon, village paisible dans le Val.", vanilla:true},
+  {id:"v5", name:"Mine de Bilegulch",       icon:"⛏", cat:"mine", color:"#80d080", x:25, y:58, desc:"Mine d'orichalque tenue par des bandits. Proche du Fort Sungard.", vanilla:true},
+  {id:"v6", name:"Mine de Dushnikh",        icon:"⛏", cat:"mine", color:"#80d080", x:16, y:70, desc:"Mine d'orichalque du campement Orque Dushnikh Yal.", vanilla:true},
+  {id:"v7", name:"Mine des Abysses Sombres",icon:"⛏", cat:"mine", color:"#c0a0f0", x:78, y:63, desc:"Seule grande mine d'ébonite de Bordeciel. Campement Orque Narzulbur.", vanilla:true},
+  {id:"v8", name:"Mine du Ventre Rouge",    icon:"⛏", cat:"mine", color:"#cd8b5a", x:72, y:72, desc:"Mine de fer à Pierre de Shor (Val). Infestée d'araignées du givre.", vanilla:true},
+  {id:"v9", name:"Mine de la Main Gauche",  icon:"⛏", cat:"mine", color:"#cd8b5a", x:13, y:67, desc:"Mine de fer près de Markarth.", vanilla:true},
+  {id:"v10",name:"Mine Brise-Fer",          icon:"⛏", cat:"mine", color:"#cd8b5a", x:42, y:8,  desc:"Mine de fer à Aube-des-Étoiles.", vanilla:true},
+  {id:"v11",name:"Mine de Vif-Argent",      icon:"⛏", cat:"mine", color:"#a8eef4", x:45, y:8,  desc:"Mine de vif-argent à Aube-des-Étoiles.", vanilla:true},
+  {id:"v12",name:"Mine de Steamscorch",     icon:"⛏", cat:"mine", color:"#50dde8", x:65, y:30, desc:"Mine de malachite à Kynesgrove. Contient des Chaurus.", vanilla:true},
+  {id:"v13",name:"Mine du Vent du Nord",    icon:"⛏", cat:"mine", color:"#cd8b5a", x:76, y:42, desc:"Mine abandonnée dans les Montagnes de l'Aurore.", vanilla:true},
+  {id:"v14",name:"Mine de Cidhna",          icon:"⛏", cat:"mine", color:"#e8e8e8", x:12, y:68, desc:"Prison et mine d'argent de Markarth. Quête 'La Conspiration des Renégats'.", vanilla:true},
+  {id:"v15",name:"Gouffre de Soljund",      icon:"⛏", cat:"mine", color:"#d0c0f0", x:28, y:60, desc:"Mine de pierre de lune. Infestée de Draug.", vanilla:true},
+  {id:"v16",name:"Crête Tranchante",        icon:"⛏", cat:"mine", color:"#e09050", x:33, y:72, desc:"Camp de bandits avec mine de corindon (Faucrépuscule).", vanilla:true},
+  {id:"v17",name:"Mine de Mor Khazgur",     icon:"⛏", cat:"mine", color:"#80d080", x:8,  y:42, desc:"Mine d'orichalque du campement Orque Mor Khazgur, extrême ouest.", vanilla:true},
+  {id:"v18",name:"Kagrenzel",               icon:"🏗️", cat:"structure", color:"#c0c0c0", x:82, y:40, desc:"Ruine Dwemer avec chute spectaculaire. Trésor Dwemer au fond.", vanilla:true},
+  {id:"v19",name:"Filons de Faucrépuscule", icon:"🪨", cat:"mine", color:"#cd8b5a", x:38, y:80, desc:"Filons de fer dans la région de Faucrépuscule.", vanilla:true},
+  {id:"v20",name:"Mine de Rochedor",        icon:"⛏", cat:"mine", color:"#e09050", x:55, y:78, desc:"Mine de corindon dans le Val.", vanilla:true},
+  {id:"v21",name:"Grotte de Cronvangr",     icon:"🚪", cat:"structure", color:"#8050d0", x:67, y:43, desc:"Grotte infestée de vampires dans la Marche de l'Est.", vanilla:true},
+  {id:"v22",name:"Caverne de Pinepeak",     icon:"🚪", cat:"structure", color:"#80c060", x:68, y:55, desc:"Grotte avec ours dans le Val.", vanilla:true},
+  {id:"v23",name:"Grotte de Snapleg",       icon:"🚪", cat:"structure", color:"#8050d0", x:71, y:60, desc:"Grotte de sorcières hagraven dans le Val.", vanilla:true},
+  {id:"v24",name:"Profondeurs de Chillwind",icon:"🚪", cat:"structure", color:"#c0c0c0", x:16, y:48, desc:"Grotte avec Chaurus dans le Haut-Roc.", vanilla:true},
+  {id:"v25",name:"Réduit du Saut de Bruca", icon:"🏕️", cat:"camp",     color:"#e0b040", x:18, y:54, desc:"Camp Renégat dans le Haut-Roc.", vanilla:true},
 ];
 
 const CITIES_DEFAULT = [
-  {id:"c_sol",   name:"Solitude",     hold:"Haafingar",  x:18,   y:20},
-  {id:"c_mor",   name:"Morthal",      hold:"Hjaalmarch", x:28,   y:36},
-  {id:"c_daw",   name:"Dawnstar",     hold:"The Pale",   x:43,   y:16},
-  {id:"c_win",   name:"Winterhold",   hold:"Winterhold", x:71,   y:18},
-  {id:"c_wnd",   name:"Windhelm",     hold:"Eastmarch",  x:66,   y:30},
-  {id:"c_whi",   name:"Whiterun",     hold:"Whiterun",   x:52.5, y:54},
-  {id:"c_mar",   name:"Markarth",     hold:"The Reach",  x:14,   y:74},
-  {id:"c_fal",   name:"Falkreath",    hold:"Falkreath",  x:38,   y:87},
-  {id:"c_rif",   name:"Riften",       hold:"The Rift",   x:75,   y:84},
-  {id:"c_hel",   name:"Helgen",       hold:"Falkreath",  x:52,   y:80},
-  {id:"c_riv",   name:"Riverwood",    hold:"Whiterun",   x:44,   y:67},
-  {id:"c_ivar",  name:"Ivarstead",    hold:"The Rift",   x:60,   y:71},
-  {id:"c_kyne",  name:"Kynesgrove",   hold:"Eastmarch",  x:64,   y:39},
-  {id:"c_shor",  name:"Shor's Stone", hold:"The Rift",   x:72,   y:77},
-  {id:"c_rorik", name:"Rorikstead",   hold:"Whiterun",   x:24,   y:55},
-  {id:"c_dragon",name:"Dragonbridge", hold:"Haafingar",  x:20,   y:28},
+  {id:"c_sol",   name:"Solitude",       hold:"Haafingar",       x:18,   y:20},
+  {id:"c_mor",   name:"Morthal",        hold:"Hjaalmarch",      x:28,   y:36},
+  {id:"c_daw",   name:"Aube-des-Étoiles",hold:"Le Pâle",        x:43,   y:16},
+  {id:"c_win",   name:"Winterheimen",   hold:"Winterheimen",    x:71,   y:18},
+  {id:"c_wnd",   name:"Ventemuraille",  hold:"Marche de l'Est", x:66,   y:30},
+  {id:"c_whi",   name:"Blancherive",    hold:"Blancherive",     x:52.5, y:54},
+  {id:"c_mar",   name:"Markarth",       hold:"Haut-Roc",        x:14,   y:74},
+  {id:"c_fal",   name:"Faucrépuscule",  hold:"Faucrépuscule",   x:38,   y:87},
+  {id:"c_rif",   name:"Rifton",         hold:"Le Val",          x:75,   y:84},
+  {id:"c_hel",   name:"Helgen",        hold:"Faucrépuscule", x:52,   y:80},
+  {id:"c_riv",   name:"Boiséclat",     hold:"Blancherive",   x:44,   y:67},
+  {id:"c_ivar",  name:"Ivarstead",     hold:"Le Val",        x:60,   y:71},
+  {id:"c_kyne",  name:"Kynesgrove",    hold:"Marche de l'Est", x:64, y:39},
+  {id:"c_shor",  name:"Pierre de Shor",hold:"Le Val",        x:72,   y:77},
+  {id:"c_rorik", name:"Rorikstead",    hold:"Blancherive",   x:24,   y:55},
+  {id:"c_dragon",name:"Pont-du-Dragon",hold:"Haafingar",     x:20,   y:28},
 ];
 
 /* ================================================================
@@ -448,7 +448,7 @@ function initMap(url, label){
 
 // Auto-load map from GitHub on startup
 window.addEventListener("DOMContentLoaded",()=>{
-  initMap(MAP_URL, "Chargement de la carte depuis GitHub...");
+  initMap(MAP_URL, "Chargement de la carte...");
 });
 
 // Fallback: manual file input (kept hidden, accessible via dev tools if needed)
@@ -594,7 +594,7 @@ function renderMarkers(){
     cities.forEach(city=>{
       const cx=(city.x/100)*imgW, cy=(city.y/100)*imgH;
       const isSel=city.id===selCityId;
-      const s=Math.max(4, Math.min(11, (isSel?11:8)/Math.sqrt(sc)));
+      const s=Math.max(4, Math.min(18, (isSel?11:8)/sc));
       const g=mkEl("g");
       g.style.pointerEvents=addMode?"none":"all";
       g.style.cursor="pointer";
@@ -669,8 +669,10 @@ function renderMarkers(){
     });
     g.addEventListener("click",ev=>{ev.stopPropagation();if(!addMode&&!mDragging)selectMarker(m.id);});
 
-    // PIN shape — size inversely proportional to zoom so pins stay same screen size
-    const pinR = Math.max(5, Math.min(14, (isSel?13:9) / Math.sqrt(sc)));
+    // PIN shape — taille CONSTANTE à l'écran (indépendante du zoom)
+    // BASE divisé par sc = même nb de pixels à l'écran quel que soit le zoom
+    const BASE = isSel ? 13 : 10;
+    const pinR = Math.max(6, Math.min(22, BASE / sc));
     const tipH = pinR * 1.4;  // spike height below circle
     const pinCY = cy - pinR;  // circle center shifted up so tip lands on cy
 
@@ -1170,7 +1172,7 @@ function showFbError(msg){
 function startFirebaseSync(){
   if(!db) return;
   fbEnabled = true;
-  setSyncStatus("ok","Connexion...");
+  setSyncStatus("ok","Connexion en cours...");
 
   // Listen for remote changes
   const docRef = db.collection("carnet").doc(FB_DOC);
