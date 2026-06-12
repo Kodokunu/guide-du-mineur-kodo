@@ -27,7 +27,7 @@ select{background:#16120a;color:#c8a86b;border:1px solid #3a2a10;border-radius:4
 #body{flex:1;display:flex;overflow:hidden}
 #map-wrap{flex:1;position:relative;overflow:hidden;background:#0a0805;cursor:grab}
 #map-view{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;line-height:0}
-#map-img{display:block;max-width:none;pointer-events:none}
+#map-img{display:block;max-width:none;pointer-events:none;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;image-rendering:high-quality}
 #marker-svg{position:absolute;top:0;left:0;overflow:visible}
 /* LEGEND */
 #legend{position:absolute;bottom:12px;left:12px;background:#0a0805ee;border:1px solid #2a1a08;border-radius:6px;padding:8px 12px;z-index:10;pointer-events:none;font-size:10px;max-height:60vh;overflow-y:auto}
@@ -593,7 +593,8 @@ function renderMarkers(){
   if(ckCities.checked){
     cities.forEach(city=>{
       const cx=(city.x/100)*imgW, cy=(city.y/100)*imgH;
-      const isSel=city.id===selCityId, s=isSel?11:8;
+      const isSel=city.id===selCityId;
+      const s=Math.max(4, Math.min(11, (isSel?11:8)/Math.sqrt(sc)));
       const g=mkEl("g");
       g.style.pointerEvents=addMode?"none":"all";
       g.style.cursor="pointer";
@@ -668,18 +669,50 @@ function renderMarkers(){
     });
     g.addEventListener("click",ev=>{ev.stopPropagation();if(!addMode&&!mDragging)selectMarker(m.id);});
 
-    // shadow + halo + dot
-    g.appendChild(mkEl("circle",{cx:cx+1,cy:cy+1,r:R+2,fill:"rgba(0,0,0,0.45)"}));
-    g.appendChild(mkEl("circle",{cx,cy,r:R+2.5,fill:"none",stroke:isSel?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.55)","stroke-width":isSel?"2":"1.2"}));
-    g.appendChild(mkEl("circle",{cx,cy,r:R,fill:col+"cc",stroke:col,"stroke-width":isSel?"2.5":"1.5"}));
+    // PIN shape — size inversely proportional to zoom so pins stay same screen size
+    const pinR = Math.max(5, Math.min(14, (isSel?13:9) / Math.sqrt(sc)));
+    const tipH = pinR * 1.4;  // spike height below circle
+    const pinCY = cy - pinR;  // circle center shifted up so tip lands on cy
 
-    // icon
-    const ico=mkTxt(cx,cy+(isSel?5:3.5),isSel?11:8.5,"#fff",null,0,m.icon||"●");
+    // Build pin path: circle top + triangular spike pointing down to (cx, cy)
+    function pinPath(r, tip){
+      // Circle arc from bottom-left to bottom-right, then down to tip
+      const bx = r * Math.sin(Math.PI/6); // 30° offset so spike is clean
+      const by = r * Math.cos(Math.PI/6);
+      const ox = cx, oy = pinCY;
+      return [
+        `M ${ox-bx},${oy+by}`,
+        `A ${r},${r} 0 1 1 ${ox+bx},${oy+by}`,
+        `L ${ox},${oy+by+tip}`,
+        "Z"
+      ].join(" ");
+    }
+
+    // Shadow
+    const shadowPath = mkEl("path",{d:pinPath(pinR+1.5,tipH+1),fill:"rgba(0,0,0,0.4)"});
+    shadowPath.style.transform=`translate(1px,1px)`;
+    g.appendChild(shadowPath);
+
+    // White halo
+    g.appendChild(mkEl("path",{d:pinPath(pinR+2,tipH+0.5),fill:"none",
+      stroke:isSel?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.5)",
+      "stroke-width":isSel?"1.8":"1"}));
+
+    // Main pin fill
+    g.appendChild(mkEl("path",{d:pinPath(pinR,tipH),
+      fill:col+(isSel?"ee":"bb"),
+      stroke:col,
+      "stroke-width":isSel?"2":"1.2"}));
+
+    // Icon text inside circle
+    const iconSize = Math.max(6, Math.min(12, pinR * 0.95));
+    const ico=mkTxt(cx, pinCY+iconSize*0.38, iconSize, "#fff", null, 0, m.icon||"●");
     ico.style.pointerEvents="none";
     g.appendChild(ico);
 
+    // Label when selected
     if(isSel){
-      g.appendChild(mkTxt(cx,cy-17,11,col,"#000",3,m.name,"'Palatino Linotype',serif"));
+      g.appendChild(mkTxt(cx, pinCY-pinR-6, 11, col, "#000", 3, m.name, "'Palatino Linotype',serif"));
     }
     svg.appendChild(g);
   });
@@ -846,9 +879,11 @@ btnAdd.onclick=()=>{
 };
 mapView.addEventListener("click",e=>{
   if(!addMode)return;
+  // Use getBoundingClientRect on mapImg — it gives the actual rendered size
+  // (imgW * sc). Dividing by rect.width gives correct % regardless of zoom/pan.
   const r=mapImg.getBoundingClientRect();
-  const xp=((e.clientX-r.left)/imgW)*100;
-  const yp=((e.clientY-r.top)/imgH)*100;
+  const xp=((e.clientX-r.left)/r.width)*100;
+  const yp=((e.clientY-r.top)/r.height)*100;
   if(xp<0||xp>100||yp<0||yp>100)return;
   showAddForm(+xp.toFixed(2),+yp.toFixed(2));
 });
